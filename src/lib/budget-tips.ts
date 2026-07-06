@@ -1,10 +1,9 @@
 import type { BudgetTip, FamilyProfile } from "./types";
+import { getSeasonalTip } from "./seasonal";
 
 export function buildBudgetTips(profile: FamilyProfile): BudgetTip[] {
   const tips: BudgetTip[] = [
-    {
-      text: "Используйте сезонные овощи — они дешевле и вкуснее",
-    },
+    { text: getSeasonalTip() },
     {
       text: "Часть ягод можно брать замороженными — выгоднее свежих вне сезона",
     },
@@ -24,13 +23,28 @@ export function buildBudgetTips(profile: FamilyProfile): BudgetTip[] {
       text: "Покупайте крупы и макароны оптом — основа бюджетного меню",
     });
     tips.push({
-      text: "Замороженные овощи и рыбные палочки — удобная альтернатива свежим продуктам",
+      text: "Замороженные овощи и полуфабрикаты — удобная альтернатива, если следить за акциями",
+    });
+    tips.push({
+      text: "Планируйте 1–2 «простых» ужина в неделю: макароны, крупы, яичные блюда",
+    });
+  }
+
+  if (profile.budget === "medium") {
+    tips.push({
+      text: "Чередуйте мясо и курицу — курица обычно выгоднее на семью",
     });
   }
 
   if (profile.budget === "high") {
     tips.push({
       text: "Можно добавить больше свежей рыбы и разнообразных овощей",
+    });
+  }
+
+  if (profile.cookWithLeftovers) {
+    tips.push({
+      text: "Готовьте крупы и мясо сразу на 2 дня — меньше включений плиты в будни",
     });
   }
 

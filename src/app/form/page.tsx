@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import type { FamilyProfile } from "@/lib/types";
 import { generateMealPlan } from "@/lib/generate-meal-plan";
-import { saveMealPlan, saveProfile } from "@/lib/storage";
+import { addToHistory, saveMealPlan, saveProfile } from "@/lib/storage";
 import { MenuForm } from "@/components/MenuForm";
 
 export default function FormPage() {
@@ -13,6 +13,7 @@ export default function FormPage() {
     saveProfile(profile);
     const plan = generateMealPlan(profile);
     saveMealPlan(plan);
+    addToHistory(plan);
     router.push("/result");
   };
 

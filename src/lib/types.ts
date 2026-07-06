@@ -155,6 +155,62 @@ export const SHOPPING_CATEGORY_LABELS: Record<IngredientCategory, string> = {
   other: "Дополнительно",
 };
 
+export interface SavedMenuEntry {
+  id: string;
+  title: string;
+  savedAt: string;
+  plan: GeneratedMealPlan;
+}
+
+export const DIFFICULTY_LABELS: Record<Difficulty, string> = {
+  easy: "Легко",
+  medium: "Средне",
+  hard: "Сложнее",
+};
+
+export const FORM_PRESETS: {
+  id: string;
+  label: string;
+  profile: Partial<FamilyProfile>;
+}[] = [
+  {
+    id: "couple",
+    label: "Пара без детей",
+    profile: {
+      adultsCount: 2,
+      childrenCount: 0,
+      days: 7,
+      mealTypes: ["breakfast", "dinner"],
+      budget: "medium",
+    },
+  },
+  {
+    id: "family-kids",
+    label: "Семья с детьми",
+    profile: {
+      adultsCount: 2,
+      childrenCount: 2,
+      days: 7,
+      mealTypes: ["breakfast", "dinner"],
+      budget: "low",
+      cookWithLeftovers: true,
+    },
+  },
+  {
+    id: "work-lunch",
+    label: "Обед на работе",
+    profile: {
+      adultsCount: 2,
+      childrenCount: 1,
+      days: 5,
+      mealTypes: ["breakfast", "dinner"],
+      budget: "low",
+      scheduleNotes: "Муж 4 дня в неделю обедает на работе",
+      cookWithLeftovers: true,
+    },
+  },
+];
+
 export const DEFAULT_FAMILY_PROFILE: FamilyProfile = {
   adultsCount: 2,
   childrenCount: 0,

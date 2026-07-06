@@ -1,26 +1,42 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import type { GeneratedMealPlan } from "@/lib/types";
-import { loadMealPlan } from "@/lib/storage";
+import {
+  loadHistoryEntry,
+  loadMealPlan,
+  saveMealPlan,
+} from "@/lib/storage";
 import { MealPlanResult } from "@/components/MealPlanResult";
 import { Button } from "@/components/Button";
-import Link from "next/link";
 
-export default function ResultPage() {
+function ResultContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const historyId = searchParams.get("id");
   const [plan, setPlan] = useState<GeneratedMealPlan | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const saved = loadMealPlan();
-    setPlan(saved);
+    let loaded: GeneratedMealPlan | null = null;
+
+    if (historyId) {
+      const entry = loadHistoryEntry(historyId);
+      loaded = entry?.plan ?? null;
+      if (loaded) saveMealPlan(loaded);
+    } else {
+      loaded = loadMealPlan();
+    }
+
+    setPlan(loaded);
     setLoading(false);
-    if (!saved) {
+
+    if (!loaded) {
       router.replace("/form");
     }
-  }, [router]);
+  }, [historyId, router]);
 
   if (loading) {
     return (
@@ -48,8 +64,24 @@ export default function ResultPage() {
         {plan.profile.days} дней · {plan.profile.adultsCount} взрослых
         {plan.profile.childrenCount > 0 &&
           ` · ${plan.profile.childrenCount} детей`}
+        {" · "}
+        {new Date(plan.generatedAt).toLocaleString("ru-RU")}
       </p>
       <MealPlanResult plan={plan} />
     </div>
+  );
+}
+
+export default function ResultPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[40vh] items-center justify-center text-amber-700">
+          Загрузка…
+        </div>
+      }
+    >
+      <ResultContent />
+    </Suspense>
   );
 }

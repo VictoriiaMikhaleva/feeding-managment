@@ -1,17 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FamilyProfile, MealType } from "@/lib/types";
 import {
   BUDGET_LABELS,
   CUISINE_LABELS,
   DEFAULT_FAMILY_PROFILE,
+  FORM_PRESETS,
   MEAL_TYPE_LABELS,
 } from "@/lib/types";
 import {
   mergeParsedIntoProfile,
   parseVoiceTextToFamilyProfile,
 } from "@/lib/parse-voice";
+import { loadProfile } from "@/lib/storage";
+import { validateProfile } from "@/lib/validate-profile";
 import { Button } from "./Button";
 import { Card } from "./Card";
 import { VoiceInput } from "./VoiceInput";
@@ -30,12 +33,31 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
   );
   const [voiceHints, setVoiceHints] = useState<string[]>([]);
   const [voiceApplied, setVoiceApplied] = useState(false);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [loadedSaved, setLoadedSaved] = useState(false);
+
+  useEffect(() => {
+    if (initialProfile) return;
+    const saved = loadProfile();
+    if (saved) {
+      setProfile(saved);
+      setLoadedSaved(true);
+    }
+  }, [initialProfile]);
 
   const update = <K extends keyof FamilyProfile>(
     key: K,
     value: FamilyProfile[K],
   ) => {
     setProfile((prev) => ({ ...prev, [key]: value }));
+    setErrors([]);
+  };
+
+  const applyPreset = (presetId: string) => {
+    const preset = FORM_PRESETS.find((p) => p.id === presetId);
+    if (!preset) return;
+    setProfile((prev) => ({ ...prev, ...preset.profile }));
+    setErrors([]);
   };
 
   const toggleMealType = (type: MealType) => {
@@ -46,6 +68,7 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
         : [...prev.mealTypes, type];
       return { ...prev, mealTypes: mealTypes.length ? mealTypes : [type] };
     });
+    setErrors([]);
   };
 
   const handleVoiceApply = (text: string) => {
@@ -54,15 +77,48 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
     setVoiceHints(parsed.unparsedHints);
     setVoiceApplied(true);
     setFillMode("manual");
+    setErrors([]);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const validationErrors = validateProfile(profile);
+    if (validationErrors.length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
     onSubmit(profile);
   };
 
+  const totalPeople = profile.adultsCount + profile.childrenCount;
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {loadedSaved && (
+        <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-800">
+          Загружены сохранённые настройки — можно изменить и сгенерировать снова
+        </div>
+      )}
+
+      <Card>
+        <h2 className="mb-3 text-lg font-semibold text-amber-950">
+          Быстрые шаблоны
+        </h2>
+        <div className="flex flex-wrap gap-2">
+          {FORM_PRESETS.map((preset) => (
+            <Button
+              key={preset.id}
+              type="button"
+              variant="outline"
+              className="text-xs"
+              onClick={() => applyPreset(preset.id)}
+            >
+              {preset.label}
+            </Button>
+          ))}
+        </div>
+      </Card>
+
       <Card>
         <h2 className="mb-4 text-lg font-semibold text-amber-950">
           Как заполнить форму?
@@ -103,6 +159,17 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
         </div>
       )}
 
+      {errors.length > 0 && (
+        <div
+          className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+          role="alert"
+        >
+          {errors.map((err) => (
+            <p key={err}>{err}</p>
+          ))}
+        </div>
+      )}
+
       <Card>
         <h2 className="mb-4 text-lg font-semibold text-amber-950">
           Состав семьи
@@ -139,6 +206,10 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
             />
           </label>
         </div>
+        <p className="mt-2 text-xs text-amber-600">
+          Всего в семье: {totalPeople}{" "}
+          {totalPeople === 1 ? "человек" : totalPeople < 5 ? "человека" : "человек"}
+        </p>
       </Card>
 
       <Card>
@@ -159,6 +230,16 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
                 update("days", parseInt(e.target.value, 10) || 1)
               }
               className="w-full rounded-xl border border-amber-200 px-3 py-2 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200"
+            />
+            <input
+              type="range"
+              min={1}
+              max={14}
+              value={profile.days}
+              onChange={(e) =>
+                update("days", parseInt(e.target.value, 10))
+              }
+              className="mt-2 w-full accent-amber-600"
             />
           </label>
           <label className="block">
@@ -289,6 +370,10 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
               rows={2}
               className="w-full rounded-xl border border-amber-200 px-3 py-2 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200"
             />
+            <p className="mt-1 text-xs text-amber-600/70">
+              Учитываются связанные продукты: лактоза → молочное, глютен → мука и
+              макароны
+            </p>
           </label>
           <label className="block">
             <span className="mb-1 block text-sm text-amber-800">
@@ -303,6 +388,14 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
             />
           </label>
         </div>
+      </Card>
+
+      <Card padding="sm" className="bg-amber-50/50">
+        <p className="text-sm text-amber-800">
+          <span className="font-medium">Итого:</span> меню на {profile.days} дн.
+          для {totalPeople} чел., {profile.mealTypes.length} приёма пищи в день,{" "}
+          бюджет «{BUDGET_LABELS[profile.budget]}»
+        </p>
       </Card>
 
       <div className="flex flex-wrap gap-3">

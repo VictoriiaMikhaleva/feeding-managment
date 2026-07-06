@@ -92,12 +92,15 @@ export function parseVoiceTextToFamilyProfile(
 
   result.adultsCount =
     extractNumber(lower, /(\d+|один|одна|два|две|двое|три|четыре|пять|шесть|семь)\s*(?:взросл)/i) ??
-    extractNumber(lower, /(?:нас|у нас)\s+(\d+|двое|трое|четверо|пятеро)/i);
+    extractNumber(lower, /(?:нас|у нас)\s+(\d+|двое|трое|четверо|пятеро)/i) ??
+    (/(?:я|мы)\s+вдвоём|вдвоем/i.test(lower) ? 2 : undefined);
 
-  result.childrenCount = extractNumber(
-    lower,
-    /(\d+|один|одна|два|две|двое|три|четыре|пять)\s*(?:дет|реб)/i,
-  );
+  result.childrenCount =
+    extractNumber(
+      lower,
+      /(\d+|один|одна|два|две|двое|три|четыре|пять)\s*(?:дет|реб)/i,
+    ) ??
+    extractNumber(lower, /(?:и|плюс)\s+(\d+|двое|трое)\s*(?:дет|реб)/i);
 
   result.days =
     extractNumber(lower, /(?:на|меню на)\s*(\d+|один|два|две|три|четыре|пять|шесть|семь)\s*дн/i) ??
@@ -114,12 +117,17 @@ export function parseVoiceTextToFamilyProfile(
     result.mealTypes = ["breakfast", "lunch", "dinner"];
   }
 
-  if (/бюджетн|экономн|дешёв|дешев/i.test(lower)) {
+  if (/бюджетн|экономн|дешёв|дешев|недорог/i.test(lower)) {
     result.budget = "low" as BudgetLevel;
-  } else if (/свободн|не огранич/i.test(lower)) {
+  } else if (/свободн|не огранич|дорог/i.test(lower)) {
     result.budget = "high" as BudgetLevel;
   } else if (/средн/i.test(lower)) {
     result.budget = "medium" as BudgetLevel;
+  }
+
+  // «завтраки и ужины» без отдельного «обеда»
+  if (/завтрак/i.test(lower) && /ужин/i.test(lower) && !/обед/i.test(lower)) {
+    result.mealTypes = ["breakfast", "dinner"];
   }
 
   result.adultFavorites = extractProductsAfter(text, [
@@ -164,6 +172,8 @@ export function parseVoiceTextToFamilyProfile(
     const daysWord = daysMatch?.[1] ?? "4";
     const daysNum = NUMBER_WORDS[daysWord] ?? parseInt(daysWord, 10) ?? 4;
     result.scheduleNotes = `Муж ${daysNum} дня в неделю обедает на работе`;
+  } else if (/жена.*работ/i.test(lower)) {
+    result.scheduleNotes = "Жена обедает на работе";
   } else if (/работ/i.test(lower)) {
     result.scheduleNotes = "Часть семьи обедает на работе";
   }

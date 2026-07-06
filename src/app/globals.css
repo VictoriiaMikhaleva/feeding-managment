@@ -22,3 +22,19 @@ textarea,
 select {
   color: #451a03;
 }
+
+@media print {
+  header,
+  footer,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  body {
+    background: white;
+  }
+
+  .hidden.print\:block {
+    display: block !important;
+  }
+}

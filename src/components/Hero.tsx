@@ -1,4 +1,9 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import type { SavedMenuEntry } from "@/lib/types";
+import { loadHistory, loadMealPlan } from "@/lib/storage";
 import { Button } from "./Button";
 import { Card } from "./Card";
 
@@ -28,9 +33,22 @@ const benefits = [
     title: "Заготовки",
     text: "Подсказки, что приготовить с запасом на несколько дней",
   },
+  {
+    icon: "🎙️",
+    title: "Голосовой ввод",
+    text: "Расскажите о семье вслух — форма заполнится автоматически",
+  },
 ];
 
 export function Hero() {
+  const [hasCurrentPlan, setHasCurrentPlan] = useState(false);
+  const [history, setHistory] = useState<SavedMenuEntry[]>([]);
+
+  useEffect(() => {
+    setHasCurrentPlan(!!loadMealPlan());
+    setHistory(loadHistory().slice(0, 3));
+  }, []);
+
   return (
     <section className="mx-auto max-w-4xl px-4 py-10 sm:py-16">
       <div className="text-center">
@@ -43,12 +61,42 @@ export function Hero() {
         <p className="mx-auto mb-8 max-w-xl text-lg text-amber-800/80">
           Составьте бюджетное меню с учётом вкусов взрослых и детей
         </p>
-        <Link href="/form">
-          <Button className="px-8 py-3 text-base">Составить меню</Button>
-        </Link>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <Link href="/form">
+            <Button className="px-8 py-3 text-base">Составить меню</Button>
+          </Link>
+          {hasCurrentPlan && (
+            <Link href="/result">
+              <Button variant="outline" className="px-6 py-3 text-base">
+                Продолжить последнее меню
+              </Button>
+            </Link>
+          )}
+        </div>
       </div>
 
-      <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {history.length > 0 && (
+        <Card className="mt-8" padding="sm">
+          <h2 className="mb-3 text-sm font-semibold text-amber-950">
+            Недавние меню
+          </h2>
+          <ul className="space-y-2">
+            {history.map((entry) => (
+              <li key={entry.id}>
+                <Link
+                  href={`/result?id=${encodeURIComponent(entry.id)}`}
+                  className="flex items-center justify-between rounded-lg px-2 py-1.5 text-sm text-amber-800 hover:bg-amber-50"
+                >
+                  <span>{entry.title}</span>
+                  <span className="text-amber-500">→</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {benefits.map((b) => (
           <Card key={b.title} padding="sm">
             <div className="mb-2 text-2xl" aria-hidden>

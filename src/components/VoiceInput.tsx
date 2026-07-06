@@ -148,11 +148,14 @@ export function VoiceInput({ onApply }: VoiceInputProps) {
       {transcript && (
         <div className="mb-3">
           <p className="mb-1 text-xs font-medium text-amber-700">
-            Распознанный текст:
+            Распознанный текст (можно поправить):
           </p>
-          <p className="rounded-lg bg-white p-3 text-sm text-amber-900">
-            {transcript}
-          </p>
+          <textarea
+            value={transcript}
+            onChange={(e) => setTranscript(e.target.value)}
+            rows={3}
+            className="w-full rounded-lg border border-amber-200 bg-white p-3 text-sm text-amber-900 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200"
+          />
         </div>
       )}
 
