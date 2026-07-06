@@ -8,6 +8,7 @@ import {
   formatMenuForCopy,
   swapMealDish,
 } from "@/lib/meal-plan-actions";
+import { downloadMealPlanPdf } from "@/lib/pdf/generate-meal-plan-pdf";
 import { formatShoppingListForCopy } from "@/lib/shopping-list";
 import {
   addToHistory,
@@ -17,7 +18,7 @@ import {
 } from "@/lib/storage";
 import { Button } from "./Button";
 import { Card } from "./Card";
-import { DayCard } from "./DayCard";
+import { SortableDayList } from "./SortableDayList";
 import { ShoppingList } from "./ShoppingList";
 import { PrepTips } from "./PrepTips";
 import { BudgetTips } from "./BudgetTips";
@@ -37,6 +38,7 @@ export function MealPlanResult({ plan: initialPlan }: MealPlanResultProps) {
   const [checked, setChecked] = useState<Set<string>>(() =>
     loadCheckedItems(plan.generatedAt),
   );
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   const stats = getPlanStats(plan);
 
@@ -99,6 +101,15 @@ export function MealPlanResult({ plan: initialPlan }: MealPlanResultProps) {
     setTimeout(() => window.print(), 150);
   };
 
+  const handleDownloadPdf = async () => {
+    setPdfLoading(true);
+    try {
+      await downloadMealPlanPdf(plan);
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
   const handleStartOver = () => router.push("/form");
 
   const tabs: { id: ResultTab; label: string }[] = [
@@ -134,6 +145,13 @@ export function MealPlanResult({ plan: initialPlan }: MealPlanResultProps) {
         <Button variant="outline" onClick={handlePrint}>
           Печать
         </Button>
+        <Button
+          variant="outline"
+          onClick={handleDownloadPdf}
+          disabled={pdfLoading}
+        >
+          {pdfLoading ? "Создаём PDF…" : "Скачать PDF"}
+        </Button>
         <Button variant="ghost" onClick={handleStartOver}>
           Начать заново
         </Button>
@@ -168,17 +186,13 @@ export function MealPlanResult({ plan: initialPlan }: MealPlanResultProps) {
             Меню по дням
           </h2>
           <p className="mb-3 text-sm text-amber-700 print:hidden">
-            Нажмите ↻ чтобы заменить отдельное блюдо
+            Перетащите ⠿ чтобы изменить порядок дней · ↻ — заменить блюдо
           </p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {plan.days.map((day) => (
-              <DayCard
-                key={day.day}
-                day={day}
-                onSwapMeal={handleSwapMeal}
-              />
-            ))}
-          </div>
+          <SortableDayList
+            plan={plan}
+            onPlanChange={persistPlan}
+            onSwapMeal={handleSwapMeal}
+          />
 
           {plan.workLunchSuggestions.length > 0 && (
             <div className="mt-6">

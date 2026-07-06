@@ -116,3 +116,37 @@ export function formatMenuForCopy(plan: GeneratedMealPlan): string {
 
   return lines.join("\n");
 }
+
+export function reorderDays(
+  plan: GeneratedMealPlan,
+  fromIndex: number,
+  toIndex: number,
+): GeneratedMealPlan {
+  if (
+    fromIndex === toIndex ||
+    fromIndex < 0 ||
+    toIndex < 0 ||
+    fromIndex >= plan.days.length ||
+    toIndex >= plan.days.length
+  ) {
+    return plan;
+  }
+
+  const days = [...plan.days];
+  const [moved] = days.splice(fromIndex, 1);
+  days.splice(toIndex, 0, moved);
+
+  const renumbered = days.map((d, i) => ({ ...d, day: i + 1 }));
+  const meta = rebuildPlanMetadata(
+    plan.profile,
+    renumbered,
+    plan.workLunchSuggestions,
+  );
+
+  return {
+    ...plan,
+    days: renumbered,
+    ...meta,
+    generatedAt: new Date().toISOString(),
+  };
+}

@@ -8,7 +8,7 @@ const PROFILE_KEY = "family-menu-profile";
 const PLAN_KEY = "family-menu-plan";
 const HISTORY_KEY = "family-menu-history";
 const CHECKED_KEY = "family-menu-checked";
-const MAX_HISTORY = 8;
+const MAX_HISTORY = 20;
 
 export function saveProfile(profile: FamilyProfile): void {
   if (typeof window === "undefined") return;

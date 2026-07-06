@@ -77,9 +77,17 @@ export function Hero() {
 
       {history.length > 0 && (
         <Card className="mt-8" padding="sm">
-          <h2 className="mb-3 text-sm font-semibold text-amber-950">
-            Недавние меню
-          </h2>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-amber-950">
+              Недавние меню
+            </h2>
+            <Link
+              href="/history"
+              className="text-sm font-medium text-amber-700 hover:text-amber-900"
+            >
+              Вся история →
+            </Link>
+          </div>
           <ul className="space-y-2">
             {history.map((entry) => (
               <li key={entry.id}>

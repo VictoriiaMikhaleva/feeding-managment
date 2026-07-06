@@ -1,5 +1,6 @@
 "use client";
 
+import type { DraggableAttributes } from "@dnd-kit/core";
 import type { MealPlanDay, MealType } from "@/lib/types";
 import { DIFFICULTY_LABELS, MEAL_TYPE_LABELS } from "@/lib/types";
 import { Card } from "./Card";
@@ -8,13 +9,39 @@ import { Button } from "./Button";
 interface DayCardProps {
   day: MealPlanDay;
   onSwapMeal?: (day: number, mealType: MealType) => void;
+  dragAttributes?: DraggableAttributes;
+  dragListeners?: Record<string, Function>;
+  isDragging?: boolean;
 }
 
-export function DayCard({ day, onSwapMeal }: DayCardProps) {
+export function DayCard({
+  day,
+  onSwapMeal,
+  dragAttributes,
+  dragListeners,
+  isDragging,
+}: DayCardProps) {
   return (
-    <Card className="transition-shadow hover:shadow-md">
+    <Card
+      className={[
+        "transition-shadow hover:shadow-md",
+        isDragging ? "ring-2 ring-amber-400 shadow-lg" : "",
+      ].join(" ")}
+    >
       <h3 className="mb-3 flex items-center justify-between text-lg font-semibold text-amber-950">
-        <span>День {day.day}</span>
+        <span className="flex items-center gap-2">
+          {dragAttributes && dragListeners && (
+            <span
+              className="cursor-grab touch-none rounded-lg px-1.5 py-0.5 text-amber-500 hover:bg-amber-50 active:cursor-grabbing"
+              aria-label={`Перетащить день ${day.day}`}
+              {...dragAttributes}
+              {...dragListeners}
+            >
+              ⠿
+            </span>
+          )}
+          День {day.day}
+        </span>
         <span className="text-xs font-normal text-amber-600">
           {day.meals.length} приёма
         </span>
