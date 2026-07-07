@@ -10,12 +10,12 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variants: Record<ButtonVariant, string> = {
   primary:
-    "bg-amber-600 text-white hover:bg-amber-700 shadow-sm shadow-amber-200",
+    "bg-gradient-to-r from-orange-500 to-pink-500 text-white hover:from-orange-600 hover:to-pink-600 shadow-sm shadow-orange-200",
   secondary:
-    "bg-orange-100 text-amber-900 hover:bg-orange-200",
+    "bg-sky-100 text-sky-900 hover:bg-sky-200",
   outline:
-    "border-2 border-amber-300 text-amber-800 hover:bg-amber-50",
-  ghost: "text-amber-800 hover:bg-amber-50",
+    "border-2 border-orange-300 text-orange-700 hover:bg-orange-50",
+  ghost: "text-slate-700 hover:bg-slate-100",
 };
 
 export function Button({
@@ -30,7 +30,7 @@ export function Button({
     <button
       className={[
         "inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-colors",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2",
         "disabled:cursor-not-allowed disabled:opacity-50",
         variants[variant],
         fullWidth ? "w-full" : "",
