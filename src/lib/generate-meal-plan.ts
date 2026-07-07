@@ -62,13 +62,26 @@ function buildDayComment(
   return notes.length > 0 ? notes.join(". ") : undefined;
 }
 
-function getParticipantsLabel(profile: FamilyProfile, mealType: "breakfast" | "lunch" | "dinner"): string | undefined {
-  const participants = profile.mealParticipants[mealType];
-  if (!participants) return undefined;
-  if (participants.adults && participants.children) return "Для всех";
-  if (participants.adults) return "Только для взрослых";
-  if (participants.children) return "Только для детей";
-  return undefined;
+function getMemberNamesByIds(profile: FamilyProfile, ids: string[]): string[] {
+  return ids.map((id) => {
+    if (id.startsWith("adult-")) {
+      const idx = Number(id.replace("adult-", "")) - 1;
+      return profile.adultNames[idx] ?? `Взрослый ${idx + 1}`;
+    }
+    const idx = Number(id.replace("child-", "")) - 1;
+    return profile.childrenNames[idx] ?? `Ребёнок ${idx + 1}`;
+  });
+}
+
+function mealMatchesSelectedMembers(
+  dish: { forAdults: boolean; forChildren: boolean },
+  selectedMemberIds: string[],
+): boolean {
+  const hasAdults = selectedMemberIds.some((id) => id.startsWith("adult-"));
+  const hasChildren = selectedMemberIds.some((id) => id.startsWith("child-"));
+  if (hasAdults && !dish.forAdults) return false;
+  if (hasChildren && !dish.forChildren) return false;
+  return true;
 }
 
 export function generateMealPlan(profile: FamilyProfile): GeneratedMealPlan {
@@ -85,13 +98,15 @@ export function generateMealPlan(profile: FamilyProfile): GeneratedMealPlan {
     const dayUsedIds = new Set<string>();
 
     for (const mealType of profile.mealTypes) {
-      const participants = profile.mealParticipants[mealType];
-      if (!participants?.adults && !participants?.children) continue;
+      const selectedMembers = profile.dayMealMembers[d]?.[mealType] ?? [];
+      if (selectedMembers.length === 0) continue;
 
       const preferTakeaway =
         mealType === "dinner" && needsWorkLunch && workLunchCount < workDays;
 
-      const candidates = filterCandidatesForProfile(mealType, profile);
+      const candidates = filterCandidatesForProfile(mealType, profile).filter((dish) =>
+        mealMatchesSelectedMembers(dish, selectedMembers),
+      );
       const dish = pickDishFromCandidates(
         candidates,
         usedRecently,
@@ -127,7 +142,7 @@ export function generateMealPlan(profile: FamilyProfile): GeneratedMealPlan {
         mealType,
         dish,
         note,
-        forWhom: getParticipantsLabel(profile, mealType),
+        forWhom: getMemberNamesByIds(profile, selectedMembers).join(", "),
       });
     }
 

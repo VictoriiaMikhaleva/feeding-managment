@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FamilyProfile, MealType } from "@/lib/types";
 import {
   BUDGET_LABELS,
+  createDefaultDayMealMembers,
   CUISINE_LABELS,
   DEFAULT_FAMILY_PROFILE,
-  EATER_LABELS,
   FORM_PRESETS,
   MEAL_TYPE_LABELS,
+  WEEKDAY_LABELS,
 } from "@/lib/types";
 import {
   mergeParsedIntoProfile,
@@ -26,6 +27,8 @@ interface MenuFormProps {
 }
 
 type FillMode = "manual" | "voice";
+
+type Member = { id: string; role: "adult" | "child"; name: string };
 
 export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
   const [fillMode, setFillMode] = useState<FillMode>("manual");
@@ -46,28 +49,6 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
     }
   }, [initialProfile]);
 
-  useEffect(() => {
-    setProfile((prev) => ({
-      ...prev,
-      mealParticipants: {
-        breakfast: {
-          adults: prev.adultsCount > 0 ? prev.mealParticipants.breakfast.adults : false,
-          children:
-            prev.childrenCount > 0 ? prev.mealParticipants.breakfast.children : false,
-        },
-        lunch: {
-          adults: prev.adultsCount > 0 ? prev.mealParticipants.lunch.adults : false,
-          children: prev.childrenCount > 0 ? prev.mealParticipants.lunch.children : false,
-        },
-        dinner: {
-          adults: prev.adultsCount > 0 ? prev.mealParticipants.dinner.adults : false,
-          children:
-            prev.childrenCount > 0 ? prev.mealParticipants.dinner.children : false,
-        },
-      },
-    }));
-  }, [profile.adultsCount, profile.childrenCount]);
-
   const update = <K extends keyof FamilyProfile>(
     key: K,
     value: FamilyProfile[K],
@@ -79,7 +60,7 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
   const applyPreset = (presetId: string) => {
     const preset = FORM_PRESETS.find((p) => p.id === presetId);
     if (!preset) return;
-    setProfile((prev) => ({ ...prev, ...preset.profile }));
+    setProfile((prev) => normalizeProfileState({ ...prev, ...preset.profile }));
     setErrors([]);
   };
 
@@ -89,31 +70,17 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
       const mealTypes = has
         ? prev.mealTypes.filter((t) => t !== type)
         : [...prev.mealTypes, type];
-      return { ...prev, mealTypes: mealTypes.length ? mealTypes : [type] };
+      return normalizeProfileState({
+        ...prev,
+        mealTypes: mealTypes.length ? mealTypes : [type],
+      });
     });
-    setErrors([]);
-  };
-
-  const toggleMealParticipant = (
-    mealType: MealType,
-    eater: "adults" | "children",
-  ) => {
-    setProfile((prev) => ({
-      ...prev,
-      mealParticipants: {
-        ...prev.mealParticipants,
-        [mealType]: {
-          ...prev.mealParticipants[mealType],
-          [eater]: !prev.mealParticipants[mealType][eater],
-        },
-      },
-    }));
     setErrors([]);
   };
 
   const handleVoiceApply = (text: string) => {
     const parsed = parseVoiceTextToFamilyProfile(text);
-    setProfile((prev) => mergeParsedIntoProfile(parsed, prev));
+    setProfile((prev) => normalizeProfileState(mergeParsedIntoProfile(parsed, prev)));
     setVoiceHints(parsed.unparsedHints);
     setVoiceApplied(true);
     setFillMode("manual");
@@ -131,6 +98,75 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
   };
 
   const totalPeople = profile.adultsCount + profile.childrenCount;
+  const members = useMemo<Member[]>(() => {
+    const adults = profile.adultNames.map((name, i) => ({
+      id: `adult-${i + 1}`,
+      role: "adult" as const,
+      name,
+    }));
+    const children = profile.childrenNames.map((name, i) => ({
+      id: `child-${i + 1}`,
+      role: "child" as const,
+      name,
+    }));
+    return [...adults, ...children];
+  }, [profile.adultNames, profile.childrenNames]);
+
+  const updateCount = (type: "adults" | "children", value: number) => {
+    setProfile((prev) => {
+      const next = { ...prev };
+      if (type === "adults") next.adultsCount = value;
+      else next.childrenCount = value;
+      return normalizeProfileState(next);
+    });
+  };
+
+  const updateMemberName = (memberId: string, value: string) => {
+    setProfile((prev) => {
+      const next = { ...prev };
+      if (memberId.startsWith("adult-")) {
+        const idx = Number(memberId.replace("adult-", "")) - 1;
+        next.adultNames = [...next.adultNames];
+        next.adultNames[idx] = value || `Взрослый ${idx + 1}`;
+      } else {
+        const idx = Number(memberId.replace("child-", "")) - 1;
+        next.childrenNames = [...next.childrenNames];
+        next.childrenNames[idx] = value || `Ребёнок ${idx + 1}`;
+      }
+      return next;
+    });
+  };
+
+  const toggleDayMealMember = (dayIndex: number, mealType: MealType, memberId: string) => {
+    setProfile((prev) => {
+      const dayMealMembers = prev.dayMealMembers.map((d) => ({
+        breakfast: [...d.breakfast],
+        lunch: [...d.lunch],
+        dinner: [...d.dinner],
+      }));
+      const set = new Set(dayMealMembers[dayIndex][mealType]);
+      if (set.has(memberId)) set.delete(memberId);
+      else set.add(memberId);
+      dayMealMembers[dayIndex][mealType] = [...set];
+      return { ...prev, dayMealMembers };
+    });
+    setErrors([]);
+  };
+
+  const toggleAllForMealDay = (dayIndex: number, mealType: MealType) => {
+    setProfile((prev) => {
+      const allIds = members.map((m) => m.id);
+      const dayMealMembers = prev.dayMealMembers.map((d) => ({
+        breakfast: [...d.breakfast],
+        lunch: [...d.lunch],
+        dinner: [...d.dinner],
+      }));
+      const current = dayMealMembers[dayIndex][mealType];
+      dayMealMembers[dayIndex][mealType] =
+        current.length === allIds.length ? [] : allIds;
+      return { ...prev, dayMealMembers };
+    });
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -225,7 +261,7 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
               max={10}
               value={profile.adultsCount}
               onChange={(e) =>
-                update("adultsCount", parseInt(e.target.value, 10) || 0)
+                updateCount("adults", parseInt(e.target.value, 10) || 0)
               }
               className="w-full rounded-xl border border-amber-200 px-3 py-2 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200"
             />
@@ -240,7 +276,7 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
               max={10}
               value={profile.childrenCount}
               onChange={(e) =>
-                update("childrenCount", parseInt(e.target.value, 10) || 0)
+                updateCount("children", parseInt(e.target.value, 10) || 0)
               }
               className="w-full rounded-xl border border-amber-200 px-3 py-2 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200"
             />
@@ -250,6 +286,23 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
           Всего в семье: {totalPeople}{" "}
           {totalPeople === 1 ? "человек" : totalPeople < 5 ? "человека" : "человек"}
         </p>
+        {members.length > 0 && (
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {members.map((member) => (
+              <label key={member.id} className="block">
+                <span className="mb-1 block text-xs text-amber-700">
+                  {member.role === "adult" ? "Взрослый" : "Ребёнок"}
+                </span>
+                <input
+                  type="text"
+                  value={member.name}
+                  onChange={(e) => updateMemberName(member.id, e.target.value)}
+                  className="w-full rounded-lg border border-amber-200 px-3 py-1.5 text-sm focus:border-amber-400 focus:outline-none"
+                />
+              </label>
+            ))}
+          </div>
+        )}
       </Card>
 
       <Card>
@@ -325,36 +378,56 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
 
         <div className="mt-4 rounded-xl border border-amber-200 bg-white/70 p-3">
           <p className="mb-2 text-sm font-medium text-amber-900">
-            Кто ест каждый приём пищи
+            Расписание по дням: кто ест каждый приём пищи
           </p>
-          <div className="space-y-2">
-            {profile.mealTypes.map((type) => (
-              <div
-                key={type}
-                className="flex flex-wrap items-center gap-2 rounded-lg bg-amber-50 px-2 py-2"
-              >
-                <span className="min-w-20 text-sm font-medium text-amber-800">
-                  {MEAL_TYPE_LABELS[type]}
-                </span>
-                {(["adults", "children"] as const).map((eater) => (
-                  <button
-                    key={`${type}-${eater}`}
-                    type="button"
-                    onClick={() => toggleMealParticipant(type, eater)}
-                    disabled={
-                      (eater === "adults" && profile.adultsCount === 0) ||
-                      (eater === "children" && profile.childrenCount === 0)
-                    }
-                    className={[
-                      "rounded-lg px-3 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40",
-                      profile.mealParticipants[type][eater]
-                        ? "bg-orange-500 text-white"
-                        : "bg-white text-amber-700",
-                    ].join(" ")}
-                  >
-                    {EATER_LABELS[eater]}
-                  </button>
-                ))}
+          <div className="space-y-3">
+            {Array.from({ length: profile.days }).map((_, dayIndex) => (
+              <div key={dayIndex} className="rounded-lg border border-amber-100 bg-amber-50/50 p-2">
+                <p className="mb-2 text-xs font-semibold text-amber-800">
+                  {WEEKDAY_LABELS[dayIndex % 7]} · День {dayIndex + 1}
+                </p>
+                <div className="space-y-2">
+                  {profile.mealTypes.map((type) => (
+                    <div key={`${dayIndex}-${type}`} className="rounded-md bg-white p-2">
+                      <div className="mb-1 flex items-center justify-between">
+                        <span className="text-xs font-medium text-slate-700">
+                          {MEAL_TYPE_LABELS[type]}
+                        </span>
+                        <button
+                          type="button"
+                          className="text-xs text-orange-600 hover:text-orange-800"
+                          onClick={() => toggleAllForMealDay(dayIndex, type)}
+                        >
+                          Все/Никто
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {members.map((member) => {
+                          const checked = profile.dayMealMembers[dayIndex]?.[type]?.includes(
+                            member.id,
+                          );
+                          return (
+                            <label
+                              key={`${dayIndex}-${type}-${member.id}`}
+                              className={[
+                                "flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-xs",
+                                checked ? "bg-orange-500 text-white" : "bg-slate-100 text-slate-700",
+                              ].join(" ")}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={Boolean(checked)}
+                                onChange={() => toggleDayMealMember(dayIndex, type, member.id)}
+                                className="hidden"
+                              />
+                              {member.name}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
@@ -487,4 +560,37 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
       </p>
     </form>
   );
+}
+
+function normalizeProfileState(profile: FamilyProfile): FamilyProfile {
+  const adults = Math.max(0, profile.adultsCount);
+  const children = Math.max(0, profile.childrenCount);
+  const days = Math.max(1, Math.min(14, profile.days));
+
+  const adultNames = Array.from({ length: adults }, (_, i) => profile.adultNames[i] ?? `Взрослый ${i + 1}`);
+  const childrenNames = Array.from({ length: children }, (_, i) => profile.childrenNames[i] ?? `Ребёнок ${i + 1}`);
+  const defaultMatrix = createDefaultDayMealMembers(days, adults, children);
+  const validIds = new Set([
+    ...adultNames.map((_, i) => `adult-${i + 1}`),
+    ...childrenNames.map((_, i) => `child-${i + 1}`),
+  ]);
+
+  const dayMealMembers = Array.from({ length: days }, (_, dayIdx) => {
+    const saved = profile.dayMealMembers[dayIdx] ?? defaultMatrix[dayIdx];
+    return {
+      breakfast: (saved.breakfast ?? []).filter((id) => validIds.has(id)),
+      lunch: (saved.lunch ?? []).filter((id) => validIds.has(id)),
+      dinner: (saved.dinner ?? []).filter((id) => validIds.has(id)),
+    };
+  });
+
+  return {
+    ...profile,
+    adultsCount: adults,
+    childrenCount: children,
+    days,
+    adultNames,
+    childrenNames,
+    dayMealMembers,
+  };
 }

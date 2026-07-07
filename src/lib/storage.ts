@@ -3,7 +3,7 @@ import type {
   GeneratedMealPlan,
   SavedMenuEntry,
 } from "./types";
-import { DEFAULT_FAMILY_PROFILE } from "./types";
+import { createDefaultDayMealMembers, DEFAULT_FAMILY_PROFILE } from "./types";
 
 const PROFILE_KEY = "family-menu-profile";
 const PLAN_KEY = "family-menu-plan";
@@ -12,9 +12,30 @@ const CHECKED_KEY = "family-menu-checked";
 const MAX_HISTORY = 20;
 
 function normalizeProfile(profile?: Partial<FamilyProfile>): FamilyProfile {
-  return {
+  const merged = {
     ...DEFAULT_FAMILY_PROFILE,
     ...(profile ?? {}),
+  };
+  const dayMealMembers =
+    merged.dayMealMembers && merged.dayMealMembers.length > 0
+      ? merged.dayMealMembers
+      : createDefaultDayMealMembers(
+          merged.days,
+          merged.adultsCount,
+          merged.childrenCount,
+        );
+
+  return {
+    ...merged,
+    dayMealMembers,
+    adultNames:
+      merged.adultNames?.length === merged.adultsCount
+        ? merged.adultNames
+        : Array.from({ length: merged.adultsCount }, (_, i) => `Взрослый ${i + 1}`),
+    childrenNames:
+      merged.childrenNames?.length === merged.childrenCount
+        ? merged.childrenNames
+        : Array.from({ length: merged.childrenCount }, (_, i) => `Ребёнок ${i + 1}`),
   };
 }
 

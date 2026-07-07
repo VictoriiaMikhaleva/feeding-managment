@@ -45,7 +45,9 @@ export interface FamilyProfile {
   childrenCount: number;
   days: number;
   mealTypes: MealType[];
-  mealParticipants: Record<MealType, { adults: boolean; children: boolean }>;
+  adultNames: string[];
+  childrenNames: string[];
+  dayMealMembers: Array<Record<MealType, string[]>>;
   budget: BudgetLevel;
   adultFavorites: string;
   childrenFavorites: string;
@@ -134,10 +136,22 @@ export const MEAL_TYPE_LABELS: Record<MealType, string> = {
   dinner: "Ужин",
 };
 
-export const EATER_LABELS = {
-  adults: "Взрослые",
-  children: "Дети",
-} as const;
+export const WEEKDAY_LABELS = ["ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС"] as const;
+
+export function createDefaultDayMealMembers(
+  days: number,
+  adultsCount: number,
+  childrenCount: number,
+): Array<Record<MealType, string[]>> {
+  const adultIds = Array.from({ length: adultsCount }, (_, i) => `adult-${i + 1}`);
+  const childIds = Array.from({ length: childrenCount }, (_, i) => `child-${i + 1}`);
+  const all = [...adultIds, ...childIds];
+  return Array.from({ length: Math.max(1, days) }, () => ({
+    breakfast: [...all],
+    lunch: [...all],
+    dinner: [...all],
+  }));
+}
 
 export const BUDGET_LABELS: Record<BudgetLevel, string> = {
   low: "Экономный",
@@ -223,11 +237,9 @@ export const DEFAULT_FAMILY_PROFILE: FamilyProfile = {
   childrenCount: 0,
   days: 7,
   mealTypes: ["breakfast", "dinner"],
-  mealParticipants: {
-    breakfast: { adults: true, children: true },
-    lunch: { adults: true, children: true },
-    dinner: { adults: true, children: true },
-  },
+  adultNames: ["Взрослый 1", "Взрослый 2"],
+  childrenNames: [],
+  dayMealMembers: createDefaultDayMealMembers(7, 2, 0),
   budget: "medium",
   adultFavorites: "",
   childrenFavorites: "",

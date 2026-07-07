@@ -13,18 +13,25 @@ export function validateProfile(profile: import("./types").FamilyProfile): strin
     errors.push("Выберите хотя бы один приём пищи");
   }
 
-  for (const mealType of profile.mealTypes) {
-    const participants = profile.mealParticipants[mealType];
-    if (!participants?.adults && !participants?.children) {
-      errors.push(
-        `Для «${
+  if (profile.adultNames.length !== profile.adultsCount) {
+    errors.push("Проверьте список взрослых: количество и имена не совпадают");
+  }
+  if (profile.childrenNames.length !== profile.childrenCount) {
+    errors.push("Проверьте список детей: количество и имена не совпадают");
+  }
+
+  for (let day = 0; day < profile.days; day++) {
+    for (const mealType of profile.mealTypes) {
+      const selected = profile.dayMealMembers[day]?.[mealType] ?? [];
+      if (selected.length === 0) {
+        const mealLabel =
           mealType === "breakfast"
-            ? "Завтрака"
+            ? "завтрака"
             : mealType === "lunch"
-              ? "Обеда"
-              : "Ужина"
-        }» выберите хотя бы одного члена семьи`,
-      );
+              ? "обеда"
+              : "ужина";
+        errors.push(`Для дня ${day + 1} выберите хотя бы одного участника для ${mealLabel}`);
+      }
     }
   }
 
