@@ -13,5 +13,20 @@ export function validateProfile(profile: import("./types").FamilyProfile): strin
     errors.push("Выберите хотя бы один приём пищи");
   }
 
+  for (const mealType of profile.mealTypes) {
+    const participants = profile.mealParticipants[mealType];
+    if (!participants?.adults && !participants?.children) {
+      errors.push(
+        `Для «${
+          mealType === "breakfast"
+            ? "Завтрака"
+            : mealType === "lunch"
+              ? "Обеда"
+              : "Ужина"
+        }» выберите хотя бы одного члена семьи`,
+      );
+    }
+  }
+
   return errors;
 }

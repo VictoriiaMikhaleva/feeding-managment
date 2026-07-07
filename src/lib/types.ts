@@ -45,6 +45,7 @@ export interface FamilyProfile {
   childrenCount: number;
   days: number;
   mealTypes: MealType[];
+  mealParticipants: Record<MealType, { adults: boolean; children: boolean }>;
   budget: BudgetLevel;
   adultFavorites: string;
   childrenFavorites: string;
@@ -58,6 +59,7 @@ export interface FamilyProfile {
 export interface PlannedMeal {
   mealType: MealType;
   dish: Dish;
+  forWhom?: string;
   note?: string;
 }
 
@@ -131,6 +133,11 @@ export const MEAL_TYPE_LABELS: Record<MealType, string> = {
   lunch: "Обед",
   dinner: "Ужин",
 };
+
+export const EATER_LABELS = {
+  adults: "Взрослые",
+  children: "Дети",
+} as const;
 
 export const BUDGET_LABELS: Record<BudgetLevel, string> = {
   low: "Экономный",
@@ -216,6 +223,11 @@ export const DEFAULT_FAMILY_PROFILE: FamilyProfile = {
   childrenCount: 0,
   days: 7,
   mealTypes: ["breakfast", "dinner"],
+  mealParticipants: {
+    breakfast: { adults: true, children: true },
+    lunch: { adults: true, children: true },
+    dinner: { adults: true, children: true },
+  },
   budget: "medium",
   adultFavorites: "",
   childrenFavorites: "",

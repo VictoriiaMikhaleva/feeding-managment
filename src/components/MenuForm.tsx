@@ -6,6 +6,7 @@ import {
   BUDGET_LABELS,
   CUISINE_LABELS,
   DEFAULT_FAMILY_PROFILE,
+  EATER_LABELS,
   FORM_PRESETS,
   MEAL_TYPE_LABELS,
 } from "@/lib/types";
@@ -45,6 +46,28 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
     }
   }, [initialProfile]);
 
+  useEffect(() => {
+    setProfile((prev) => ({
+      ...prev,
+      mealParticipants: {
+        breakfast: {
+          adults: prev.adultsCount > 0 ? prev.mealParticipants.breakfast.adults : false,
+          children:
+            prev.childrenCount > 0 ? prev.mealParticipants.breakfast.children : false,
+        },
+        lunch: {
+          adults: prev.adultsCount > 0 ? prev.mealParticipants.lunch.adults : false,
+          children: prev.childrenCount > 0 ? prev.mealParticipants.lunch.children : false,
+        },
+        dinner: {
+          adults: prev.adultsCount > 0 ? prev.mealParticipants.dinner.adults : false,
+          children:
+            prev.childrenCount > 0 ? prev.mealParticipants.dinner.children : false,
+        },
+      },
+    }));
+  }, [profile.adultsCount, profile.childrenCount]);
+
   const update = <K extends keyof FamilyProfile>(
     key: K,
     value: FamilyProfile[K],
@@ -68,6 +91,23 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
         : [...prev.mealTypes, type];
       return { ...prev, mealTypes: mealTypes.length ? mealTypes : [type] };
     });
+    setErrors([]);
+  };
+
+  const toggleMealParticipant = (
+    mealType: MealType,
+    eater: "adults" | "children",
+  ) => {
+    setProfile((prev) => ({
+      ...prev,
+      mealParticipants: {
+        ...prev.mealParticipants,
+        [mealType]: {
+          ...prev.mealParticipants[mealType],
+          [eater]: !prev.mealParticipants[mealType][eater],
+        },
+      },
+    }));
     setErrors([]);
   };
 
@@ -279,6 +319,43 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
               >
                 {MEAL_TYPE_LABELS[type]}
               </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-4 rounded-xl border border-amber-200 bg-white/70 p-3">
+          <p className="mb-2 text-sm font-medium text-amber-900">
+            Кто ест каждый приём пищи
+          </p>
+          <div className="space-y-2">
+            {profile.mealTypes.map((type) => (
+              <div
+                key={type}
+                className="flex flex-wrap items-center gap-2 rounded-lg bg-amber-50 px-2 py-2"
+              >
+                <span className="min-w-20 text-sm font-medium text-amber-800">
+                  {MEAL_TYPE_LABELS[type]}
+                </span>
+                {(["adults", "children"] as const).map((eater) => (
+                  <button
+                    key={`${type}-${eater}`}
+                    type="button"
+                    onClick={() => toggleMealParticipant(type, eater)}
+                    disabled={
+                      (eater === "adults" && profile.adultsCount === 0) ||
+                      (eater === "children" && profile.childrenCount === 0)
+                    }
+                    className={[
+                      "rounded-lg px-3 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40",
+                      profile.mealParticipants[type][eater]
+                        ? "bg-orange-500 text-white"
+                        : "bg-white text-amber-700",
+                    ].join(" ")}
+                  >
+                    {EATER_LABELS[eater]}
+                  </button>
+                ))}
+              </div>
             ))}
           </div>
         </div>

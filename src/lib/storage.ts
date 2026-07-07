@@ -3,12 +3,27 @@ import type {
   GeneratedMealPlan,
   SavedMenuEntry,
 } from "./types";
+import { DEFAULT_FAMILY_PROFILE } from "./types";
 
 const PROFILE_KEY = "family-menu-profile";
 const PLAN_KEY = "family-menu-plan";
 const HISTORY_KEY = "family-menu-history";
 const CHECKED_KEY = "family-menu-checked";
 const MAX_HISTORY = 20;
+
+function normalizeProfile(profile?: Partial<FamilyProfile>): FamilyProfile {
+  return {
+    ...DEFAULT_FAMILY_PROFILE,
+    ...(profile ?? {}),
+  };
+}
+
+function normalizePlan(plan: GeneratedMealPlan): GeneratedMealPlan {
+  return {
+    ...plan,
+    profile: normalizeProfile(plan.profile),
+  };
+}
 
 export function saveProfile(profile: FamilyProfile): void {
   if (typeof window === "undefined") return;
@@ -20,7 +35,7 @@ export function loadProfile(): FamilyProfile | null {
   const raw = localStorage.getItem(PROFILE_KEY);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as FamilyProfile;
+    return normalizeProfile(JSON.parse(raw) as Partial<FamilyProfile>);
   } catch {
     return null;
   }
@@ -36,7 +51,7 @@ export function loadMealPlan(): GeneratedMealPlan | null {
   const raw = localStorage.getItem(PLAN_KEY);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as GeneratedMealPlan;
+    return normalizePlan(JSON.parse(raw) as GeneratedMealPlan);
   } catch {
     return null;
   }
@@ -63,7 +78,10 @@ export function loadHistory(): SavedMenuEntry[] {
   const raw = localStorage.getItem(HISTORY_KEY);
   if (!raw) return [];
   try {
-    return JSON.parse(raw) as SavedMenuEntry[];
+    return (JSON.parse(raw) as SavedMenuEntry[]).map((entry) => ({
+      ...entry,
+      plan: normalizePlan(entry.plan),
+    }));
   } catch {
     return [];
   }

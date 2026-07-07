@@ -63,6 +63,9 @@ export function DayCard({
                   {meal.dish.batchCooking && " · с запасом"}
                   {meal.dish.takeawayFriendly && " · в контейнер"}
                 </p>
+                {meal.forWhom && (
+                  <p className="mt-0.5 text-xs text-slate-600">{meal.forWhom}</p>
+                )}
               </div>
               {onSwapMeal && (
                 <Button

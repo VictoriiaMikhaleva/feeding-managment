@@ -62,6 +62,15 @@ function buildDayComment(
   return notes.length > 0 ? notes.join(". ") : undefined;
 }
 
+function getParticipantsLabel(profile: FamilyProfile, mealType: "breakfast" | "lunch" | "dinner"): string | undefined {
+  const participants = profile.mealParticipants[mealType];
+  if (!participants) return undefined;
+  if (participants.adults && participants.children) return "Для всех";
+  if (participants.adults) return "Только для взрослых";
+  if (participants.children) return "Только для детей";
+  return undefined;
+}
+
 export function generateMealPlan(profile: FamilyProfile): GeneratedMealPlan {
   const usedRecently = new Map<string, number>();
   const tagCounts = new Map<string, number>();
@@ -76,6 +85,9 @@ export function generateMealPlan(profile: FamilyProfile): GeneratedMealPlan {
     const dayUsedIds = new Set<string>();
 
     for (const mealType of profile.mealTypes) {
+      const participants = profile.mealParticipants[mealType];
+      if (!participants?.adults && !participants?.children) continue;
+
       const preferTakeaway =
         mealType === "dinner" && needsWorkLunch && workLunchCount < workDays;
 
@@ -111,7 +123,12 @@ export function generateMealPlan(profile: FamilyProfile): GeneratedMealPlan {
         workLunchCount++;
       }
 
-      meals.push({ mealType, dish, note });
+      meals.push({
+        mealType,
+        dish,
+        note,
+        forWhom: getParticipantsLabel(profile, mealType),
+      });
     }
 
     days.push({
