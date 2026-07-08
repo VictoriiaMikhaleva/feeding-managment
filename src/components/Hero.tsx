@@ -50,33 +50,69 @@ export function Hero() {
   }, []);
 
   return (
-    <section className="mx-auto max-w-4xl px-4 py-10 sm:py-16">
-      <div className="text-center">
-        <p className="mb-3 text-sm font-medium uppercase tracking-wide text-amber-600">
-          Планировщик питания для семьи
-        </p>
-        <h1 className="mb-4 text-3xl font-bold leading-tight text-amber-950 sm:text-4xl">
-          Семейное меню на неделю
-        </h1>
-        <p className="mx-auto mb-8 max-w-xl text-lg text-amber-800/80">
-          Составьте бюджетное меню с учётом вкусов взрослых и детей
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <Link href="/form">
-            <Button className="px-8 py-3 text-base">Составить меню</Button>
-          </Link>
-          {hasCurrentPlan && (
-            <Link href="/result">
-              <Button variant="outline" className="px-6 py-3 text-base">
-                Продолжить последнее меню
-              </Button>
-            </Link>
-          )}
+    <section className="mx-auto max-w-6xl px-4 py-8 sm:py-14">
+      <div className="relative overflow-hidden rounded-3xl border border-amber-200/60 bg-gradient-to-br from-orange-100 via-amber-50 to-sky-100 p-6 shadow-xl shadow-orange-100/70 sm:p-10">
+        <div className="pointer-events-none absolute -left-8 -top-8 h-28 w-28 rounded-full bg-pink-300/40 blur-xl" />
+        <div className="pointer-events-none absolute -bottom-10 -right-10 h-40 w-40 rounded-full bg-sky-300/35 blur-2xl" />
+
+        <div className="relative grid items-center gap-8 lg:grid-cols-[1.3fr_0.9fr]">
+          <div>
+            <p className="mb-3 inline-flex rounded-full border border-amber-300/60 bg-white/70 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-700">
+              Планировщик питания для семьи
+            </p>
+            <h1 className="mb-4 text-3xl font-extrabold leading-tight text-amber-950 sm:text-5xl">
+              Стильное семейное меню
+              <span className="block bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">
+                на всю неделю
+              </span>
+            </h1>
+            <p className="mb-7 max-w-2xl text-base text-amber-900/80 sm:text-lg">
+              Подбирайте блюда под взрослых и детей, сразу получайте список покупок,
+              PDF и готовый план без ежедневной рутины.
+            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <Link href="/form">
+                <Button className="px-8 py-3 text-base">Составить меню</Button>
+              </Link>
+              {hasCurrentPlan && (
+                <Link href="/result">
+                  <Button variant="outline" className="px-6 py-3 text-base">
+                    Продолжить последнее меню
+                  </Button>
+                </Link>
+              )}
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+            <div className="rounded-2xl border border-white/70 bg-white/80 p-4 shadow-sm backdrop-blur">
+              <p className="text-xs font-medium uppercase tracking-wide text-amber-700">
+                Экономия времени
+              </p>
+              <p className="mt-1 text-2xl font-bold text-amber-950">до 5 ч/нед.</p>
+            </div>
+            <div className="rounded-2xl border border-white/70 bg-white/80 p-4 shadow-sm backdrop-blur">
+              <p className="text-xs font-medium uppercase tracking-wide text-amber-700">
+                Форматы
+              </p>
+              <p className="mt-1 text-sm font-semibold text-amber-950">
+                Меню + покупки + PDF
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/70 bg-white/80 p-4 shadow-sm backdrop-blur">
+              <p className="text-xs font-medium uppercase tracking-wide text-amber-700">
+                Гибкость
+              </p>
+              <p className="mt-1 text-sm font-semibold text-amber-950">
+                Под вкус каждого члена семьи
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
       {history.length > 0 && (
-        <Card className="mt-8" padding="sm">
+        <Card className="mt-7 border-amber-200/70" padding="sm">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-amber-950">
               Недавние меню
@@ -106,8 +142,15 @@ export function Hero() {
 
       <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {benefits.map((b) => (
-          <Card key={b.title} padding="sm">
-            <div className="mb-2 text-2xl" aria-hidden>
+          <Card
+            key={b.title}
+            padding="sm"
+            className="border-amber-200/70 bg-white/85 shadow-sm transition-transform duration-200 hover:-translate-y-1 hover:shadow-md"
+          >
+            <div
+              className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-orange-100 to-amber-50 text-2xl"
+              aria-hidden
+            >
               {b.icon}
             </div>
             <h3 className="mb-1 font-semibold text-amber-950">{b.title}</h3>
@@ -115,6 +158,30 @@ export function Hero() {
           </Card>
         ))}
       </div>
+
+      <Card className="mt-10 border-amber-200/80 bg-white/80" padding="sm">
+        <h2 className="mb-3 text-lg font-semibold text-amber-950">Как это работает</h2>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl bg-amber-50 p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+              Шаг 1
+            </p>
+            <p className="mt-1 text-sm text-amber-900">Заполните форму или продиктуйте голосом</p>
+          </div>
+          <div className="rounded-xl bg-amber-50 p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+              Шаг 2
+            </p>
+            <p className="mt-1 text-sm text-amber-900">Отметьте подходящие блюда и настройте меню</p>
+          </div>
+          <div className="rounded-xl bg-amber-50 p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+              Шаг 3
+            </p>
+            <p className="mt-1 text-sm text-amber-900">Скачайте PDF и идите за покупками с готовым списком</p>
+          </div>
+        </div>
+      </Card>
 
       <p className="mt-10 text-center text-xs text-amber-700/60">
         Меню носит рекомендательный характер. При аллергиях и медицинских
