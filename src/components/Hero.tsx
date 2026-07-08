@@ -61,10 +61,7 @@ export function Hero() {
               Планировщик питания для семьи
             </p>
             <h1 className="mb-4 text-3xl font-extrabold leading-tight text-amber-950 sm:text-5xl">
-              Стильное семейное меню
-              <span className="block bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">
-                на всю неделю
-              </span>
+              Семейное меню с учетом бюджета и предпочтений
             </h1>
             <p className="mb-7 max-w-2xl text-base text-amber-900/80 sm:text-lg">
               Подбирайте блюда под взрослых и детей, сразу получайте список покупок,
