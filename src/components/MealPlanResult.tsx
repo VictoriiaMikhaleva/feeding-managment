@@ -8,6 +8,10 @@ import {
   formatMenuForCopy,
   swapMealDish,
 } from "@/lib/meal-plan-actions";
+import {
+  downloadShoppingListPdf,
+  downloadShoppingListTxt,
+} from "@/lib/export-shopping-list";
 import { downloadMealPlanPdf } from "@/lib/pdf/generate-meal-plan-pdf";
 import { formatShoppingListForCopy } from "@/lib/shopping-list";
 import {
@@ -39,6 +43,7 @@ export function MealPlanResult({ plan: initialPlan }: MealPlanResultProps) {
     loadCheckedItems(plan.generatedAt),
   );
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [shoppingExportLoading, setShoppingExportLoading] = useState(false);
 
   const stats = getPlanStats(plan);
 
@@ -110,6 +115,19 @@ export function MealPlanResult({ plan: initialPlan }: MealPlanResultProps) {
     }
   };
 
+  const handleDownloadShoppingTxt = () => {
+    downloadShoppingListTxt(plan, checked);
+  };
+
+  const handleDownloadShoppingPdf = async () => {
+    setShoppingExportLoading(true);
+    try {
+      await downloadShoppingListPdf(plan);
+    } finally {
+      setShoppingExportLoading(false);
+    }
+  };
+
   const handleStartOver = () => router.push("/form");
 
   const tabs: { id: ResultTab; label: string }[] = [
@@ -137,7 +155,17 @@ export function MealPlanResult({ plan: initialPlan }: MealPlanResultProps) {
           {saved ? "✓ Сохранено" : "Сохранить меню"}
         </Button>
         <Button variant="outline" onClick={handleCopyShoppingList}>
-          {copied === "list" ? "✓ Скопировано" : "Список покупок"}
+          {copied === "list" ? "✓ Скопировано" : "Копировать список"}
+        </Button>
+        <Button variant="outline" onClick={handleDownloadShoppingTxt}>
+          Список .txt
+        </Button>
+        <Button
+          variant="outline"
+          onClick={handleDownloadShoppingPdf}
+          disabled={shoppingExportLoading}
+        >
+          {shoppingExportLoading ? "Создаём PDF…" : "Список PDF"}
         </Button>
         <Button variant="outline" onClick={handleCopyMenu}>
           {copied === "menu" ? "✓ Меню скопировано" : "Копировать меню"}
@@ -150,7 +178,7 @@ export function MealPlanResult({ plan: initialPlan }: MealPlanResultProps) {
           onClick={handleDownloadPdf}
           disabled={pdfLoading}
         >
-          {pdfLoading ? "Создаём PDF…" : "Скачать PDF"}
+          {pdfLoading ? "Создаём PDF…" : "PDF меню"}
         </Button>
         <Button variant="ghost" onClick={handleStartOver}>
           Начать заново
@@ -213,9 +241,35 @@ export function MealPlanResult({ plan: initialPlan }: MealPlanResultProps) {
 
       {tab === "shopping" && (
         <section>
-          <h2 className="mb-4 text-xl font-semibold text-amber-950">
-            Список покупок
-          </h2>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-xl font-semibold text-amber-950">
+              Список покупок
+            </h2>
+            <div className="flex flex-wrap gap-2 print:hidden">
+              <Button
+                variant="outline"
+                className="px-3 py-2"
+                onClick={handleCopyShoppingList}
+              >
+                {copied === "list" ? "✓ Скопировано" : "Копировать"}
+              </Button>
+              <Button
+                variant="outline"
+                className="px-3 py-2"
+                onClick={handleDownloadShoppingTxt}
+              >
+                Скачать .txt
+              </Button>
+              <Button
+                variant="outline"
+                className="px-3 py-2"
+                onClick={handleDownloadShoppingPdf}
+                disabled={shoppingExportLoading}
+              >
+                {shoppingExportLoading ? "PDF…" : "Скачать PDF"}
+              </Button>
+            </div>
+          </div>
           <ShoppingList
             categories={plan.shoppingList}
             checked={checked}
