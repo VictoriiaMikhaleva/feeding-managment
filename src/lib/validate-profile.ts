@@ -3,6 +3,8 @@ import { DISHES } from "./dishes";
 
 export function validateProfile(profile: import("./types").FamilyProfile): string[] {
   const errors: string[] = [];
+  const mealTypes = profile.mealTypes ?? [];
+  const cookingMethods = profile.cookingMethods ?? [];
 
   if (profile.adultsCount + profile.childrenCount < 1) {
     errors.push("Укажите хотя бы одного человека в семье");
@@ -12,18 +14,18 @@ export function validateProfile(profile: import("./types").FamilyProfile): strin
     errors.push("Количество дней — от 1 до 14");
   }
 
-  if (profile.mealTypes.length === 0) {
+  if (mealTypes.length === 0) {
     errors.push("Выберите хотя бы один приём пищи");
   }
-  if (profile.cookingMethods.length === 0) {
+  if (cookingMethods.length === 0) {
     errors.push("Выберите хотя бы один способ приготовления");
   }
 
-  for (const mealType of profile.mealTypes) {
+  for (const mealType of mealTypes) {
     const hasAtLeastOneDish = DISHES.some((dish) => {
       if (dish.mealType !== mealType) return false;
       const methods = getDishCookingMethods(dish);
-      return methods.some((method) => profile.cookingMethods.includes(method));
+      return methods.some((method) => cookingMethods.includes(method));
     });
 
     if (!hasAtLeastOneDish) {
@@ -47,7 +49,7 @@ export function validateProfile(profile: import("./types").FamilyProfile): strin
   }
 
   for (let day = 0; day < profile.days; day++) {
-    for (const mealType of profile.mealTypes) {
+    for (const mealType of mealTypes) {
       const selected = profile.dayMealMembers[day]?.[mealType] ?? [];
       if (selected.length === 0) {
         const mealLabel =

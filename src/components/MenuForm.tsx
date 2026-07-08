@@ -85,10 +85,11 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
 
   const toggleCookingMethod = (method: (typeof COOKING_METHOD_ORDER)[number]) => {
     setProfile((prev) => {
-      const has = prev.cookingMethods.includes(method);
+      const currentMethods = prev.cookingMethods ?? [];
+      const has = currentMethods.includes(method);
       const cookingMethods = has
-        ? prev.cookingMethods.filter((m) => m !== method)
-        : [...prev.cookingMethods, method];
+        ? currentMethods.filter((m) => m !== method)
+        : [...currentMethods, method];
       return normalizeProfileState({
         ...prev,
         cookingMethods: cookingMethods.length ? cookingMethods : [method],
@@ -108,12 +109,13 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const validationErrors = validateProfile(profile);
+    const normalizedProfile = normalizeProfileState(profile);
+    const validationErrors = validateProfile(normalizedProfile);
     if (validationErrors.length > 0) {
       setErrors(validationErrors);
       return;
     }
-    onSubmit(profile);
+    onSubmit(normalizedProfile);
   };
 
   const totalPeople = profile.adultsCount + profile.childrenCount;
@@ -407,7 +409,7 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
                 onClick={() => toggleCookingMethod(method)}
                 className={[
                   "rounded-xl px-4 py-2 text-sm font-medium transition-colors",
-                  profile.cookingMethods.includes(method)
+                  (profile.cookingMethods ?? []).includes(method)
                     ? "bg-sky-600 text-white"
                     : "bg-sky-50 text-sky-800 hover:bg-sky-100",
                 ].join(" ")}
