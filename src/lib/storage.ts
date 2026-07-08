@@ -1,9 +1,15 @@
 import type {
   FamilyProfile,
   GeneratedMealPlan,
+  MealType,
   SavedMenuEntry,
 } from "./types";
-import { createDefaultDayMealMembers, DEFAULT_FAMILY_PROFILE } from "./types";
+import {
+  createDefaultDayMealMembers,
+  DEFAULT_FAMILY_PROFILE,
+  MEAL_TYPE_ORDER,
+  orderMealTypes,
+} from "./types";
 
 const PROFILE_KEY = "family-menu-profile";
 const PLAN_KEY = "family-menu-plan";
@@ -27,6 +33,10 @@ function normalizeProfile(profile?: Partial<FamilyProfile>): FamilyProfile {
 
   return {
     ...merged,
+    mealTypes:
+      orderMealTypes(merged.mealTypes).length > 0
+        ? orderMealTypes(merged.mealTypes)
+        : ["breakfast"],
     dayMealMembers,
     adultNames:
       merged.adultNames?.length === merged.adultsCount
@@ -39,9 +49,21 @@ function normalizeProfile(profile?: Partial<FamilyProfile>): FamilyProfile {
   };
 }
 
+function mealTypeSortValue(mealType: MealType): number {
+  return MEAL_TYPE_ORDER.indexOf(mealType);
+}
+
 function normalizePlan(plan: GeneratedMealPlan): GeneratedMealPlan {
+  const normalizedDays = plan.days.map((day) => ({
+    ...day,
+    meals: [...day.meals].sort(
+      (a, b) => mealTypeSortValue(a.mealType) - mealTypeSortValue(b.mealType),
+    ),
+  }));
+
   return {
     ...plan,
+    days: normalizedDays,
     profile: normalizeProfile(plan.profile),
   };
 }

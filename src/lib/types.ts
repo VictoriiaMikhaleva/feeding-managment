@@ -136,6 +136,13 @@ export const MEAL_TYPE_LABELS: Record<MealType, string> = {
   dinner: "Ужин",
 };
 
+export const MEAL_TYPE_ORDER: MealType[] = ["breakfast", "lunch", "dinner"];
+
+export function orderMealTypes(mealTypes: MealType[]): MealType[] {
+  const unique = new Set(mealTypes);
+  return MEAL_TYPE_ORDER.filter((type) => unique.has(type));
+}
+
 export const WEEKDAY_LABELS = ["ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС"] as const;
 
 export function createDefaultDayMealMembers(

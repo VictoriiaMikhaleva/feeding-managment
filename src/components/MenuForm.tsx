@@ -9,6 +9,8 @@ import {
   DEFAULT_FAMILY_PROFILE,
   FORM_PRESETS,
   MEAL_TYPE_LABELS,
+  MEAL_TYPE_ORDER,
+  orderMealTypes,
   WEEKDAY_LABELS,
 } from "@/lib/types";
 import {
@@ -358,7 +360,7 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
             Приёмы пищи в день
           </span>
           <div className="flex flex-wrap gap-2">
-            {(["breakfast", "lunch", "dinner"] as MealType[]).map((type) => (
+            {MEAL_TYPE_ORDER.map((type) => (
               <button
                 key={type}
                 type="button"
@@ -591,6 +593,10 @@ function normalizeProfileState(profile: FamilyProfile): FamilyProfile {
     days,
     adultNames,
     childrenNames,
+    mealTypes:
+      orderMealTypes(profile.mealTypes).length > 0
+        ? orderMealTypes(profile.mealTypes)
+        : ["breakfast"],
     dayMealMembers,
   };
 }
