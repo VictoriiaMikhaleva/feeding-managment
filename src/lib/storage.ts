@@ -17,6 +17,22 @@ const HISTORY_KEY = "family-menu-history";
 const CHECKED_KEY = "family-menu-checked";
 const MAX_HISTORY = 20;
 
+function safelyParseJson<T>(raw: string): T | null {
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
+}
+
+function saveIfChanged(key: string, nextValue: unknown, previousRaw?: string): void {
+  if (typeof window === "undefined") return;
+  const nextRaw = JSON.stringify(nextValue);
+  if (previousRaw !== nextRaw) {
+    localStorage.setItem(key, nextRaw);
+  }
+}
+
 function normalizeProfile(profile?: Partial<FamilyProfile>): FamilyProfile {
   const merged = {
     ...DEFAULT_FAMILY_PROFILE,
@@ -77,11 +93,12 @@ export function loadProfile(): FamilyProfile | null {
   if (typeof window === "undefined") return null;
   const raw = localStorage.getItem(PROFILE_KEY);
   if (!raw) return null;
-  try {
-    return normalizeProfile(JSON.parse(raw) as Partial<FamilyProfile>);
-  } catch {
-    return null;
-  }
+  const parsed = safelyParseJson<Partial<FamilyProfile>>(raw);
+  if (!parsed) return null;
+
+  const normalized = normalizeProfile(parsed);
+  saveIfChanged(PROFILE_KEY, normalized, raw);
+  return normalized;
 }
 
 export function saveMealPlan(plan: GeneratedMealPlan): void {
@@ -93,11 +110,12 @@ export function loadMealPlan(): GeneratedMealPlan | null {
   if (typeof window === "undefined") return null;
   const raw = localStorage.getItem(PLAN_KEY);
   if (!raw) return null;
-  try {
-    return normalizePlan(JSON.parse(raw) as GeneratedMealPlan);
-  } catch {
-    return null;
-  }
+  const parsed = safelyParseJson<GeneratedMealPlan>(raw);
+  if (!parsed) return null;
+
+  const normalized = normalizePlan(parsed);
+  saveIfChanged(PLAN_KEY, normalized, raw);
+  return normalized;
 }
 
 export function addToHistory(plan: GeneratedMealPlan): void {
@@ -120,14 +138,15 @@ export function loadHistory(): SavedMenuEntry[] {
   if (typeof window === "undefined") return [];
   const raw = localStorage.getItem(HISTORY_KEY);
   if (!raw) return [];
-  try {
-    return (JSON.parse(raw) as SavedMenuEntry[]).map((entry) => ({
-      ...entry,
-      plan: normalizePlan(entry.plan),
-    }));
-  } catch {
-    return [];
-  }
+  const parsed = safelyParseJson<SavedMenuEntry[]>(raw);
+  if (!parsed) return [];
+
+  const normalized = parsed.map((entry) => ({
+    ...entry,
+    plan: normalizePlan(entry.plan),
+  }));
+  saveIfChanged(HISTORY_KEY, normalized, raw);
+  return normalized;
 }
 
 export function loadHistoryEntry(id: string): SavedMenuEntry | null {
