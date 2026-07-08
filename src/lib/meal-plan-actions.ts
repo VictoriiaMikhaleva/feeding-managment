@@ -4,6 +4,7 @@ import type {
   MealType,
   PlannedMeal,
 } from "./types";
+import { formatCookingMethods, getDishCookingMethods } from "./cooking-methods";
 import { buildBudgetTips } from "./budget-tips";
 import {
   filterCandidatesForProfile,
@@ -108,6 +109,9 @@ export function formatMenuForCopy(plan: GeneratedMealPlan): string {
             ? "Обед"
             : "Ужин";
       lines.push(`  ${label}: ${meal.dish.name}`);
+      lines.push(
+        `    Способ: ${formatCookingMethods(getDishCookingMethods(meal.dish))}`,
+      );
       if (meal.note) lines.push(`    → ${meal.note}`);
     }
     if (day.comment) lines.push(`  💬 ${day.comment}`);

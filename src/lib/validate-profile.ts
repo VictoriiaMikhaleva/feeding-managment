@@ -12,6 +12,9 @@ export function validateProfile(profile: import("./types").FamilyProfile): strin
   if (profile.mealTypes.length === 0) {
     errors.push("Выберите хотя бы один приём пищи");
   }
+  if (profile.cookingMethods.length === 0) {
+    errors.push("Выберите хотя бы один способ приготовления");
+  }
 
   if (profile.adultNames.length !== profile.adultsCount) {
     errors.push("Проверьте список взрослых: количество и имена не совпадают");

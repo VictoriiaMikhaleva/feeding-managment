@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import type { MealPlanDay, MealType, PlannedMeal } from "@/lib/types";
 import { MEAL_TYPE_LABELS } from "@/lib/types";
+import { formatCookingMethods, getDishCookingMethods } from "@/lib/cooking-methods";
 import {
   formatIngredientsShort,
   getDishPresentation,
@@ -78,6 +79,7 @@ function MealColumn({
 
   const p = getDishPresentation(meal.dish, mealType);
   const ingredients = formatIngredientsShort(meal.dish);
+  const cookingMethods = formatCookingMethods(getDishCookingMethods(meal.dish));
 
   return (
     <div style={cardStyle}>
@@ -184,6 +186,17 @@ function MealColumn({
         }}
       >
         <strong style={{ color: "#5C5348" }}>Состав:</strong> {ingredients}
+      </p>
+
+      <p
+        style={{
+          fontSize: 11.5,
+          lineHeight: 1.45,
+          color: "#516D8A",
+          margin: "0 0 12px",
+        }}
+      >
+        <strong style={{ color: "#47607A" }}>Способ:</strong> {cookingMethods}
       </p>
 
       <div

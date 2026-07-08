@@ -72,8 +72,8 @@ export function Hero() {
               Семейное меню с учетом бюджета и предпочтений
             </h1>
             <p className="mb-7 max-w-2xl text-base text-amber-900/80 sm:text-lg">
-              Подбирайте блюда под взрослых и детей, сразу получайте список покупок,
-              PDF и готовый план без ежедневной рутины.
+              Меню для взрослых и детей, список покупок, выгрузка в PDF без
+              ежедневной рутины.
             </p>
             <div className="flex flex-wrap items-center gap-3">
               <Link href="/form">
@@ -101,7 +101,7 @@ export function Hero() {
                 Форматы
               </p>
               <p className="mt-1 text-sm font-semibold text-amber-950">
-                Меню + покупки + PDF
+                Меню + список продуктов + PDF
               </p>
             </div>
             <div className="rounded-2xl border border-white/70 bg-white/80 p-4 shadow-sm backdrop-blur">
@@ -109,7 +109,7 @@ export function Hero() {
                 Гибкость
               </p>
               <p className="mt-1 text-sm font-semibold text-amber-950">
-                Под вкус каждого члена семьи
+                С учетом вкусов каждого члена семьи
               </p>
             </div>
           </div>

@@ -10,6 +10,12 @@ export type CuisinePreference =
   | "any";
 
 export type Difficulty = "easy" | "medium" | "hard";
+export type CookingMethod =
+  | "oven"
+  | "airfryer"
+  | "stove"
+  | "multicooker"
+  | "microwave";
 
 export type IngredientCategory =
   | "meat"
@@ -38,6 +44,7 @@ export interface Dish {
   batchCooking: boolean;
   takeawayFriendly?: boolean;
   cuisine?: CuisinePreference[];
+  cookingMethods?: CookingMethod[];
 }
 
 export interface FamilyProfile {
@@ -56,6 +63,7 @@ export interface FamilyProfile {
   scheduleNotes: string;
   cookWithLeftovers: boolean;
   cuisinePreference: CuisinePreference;
+  cookingMethods: CookingMethod[];
 }
 
 export interface PlannedMeal {
@@ -141,6 +149,27 @@ export const MEAL_TYPE_ORDER: MealType[] = ["breakfast", "lunch", "dinner"];
 export function orderMealTypes(mealTypes: MealType[]): MealType[] {
   const unique = new Set(mealTypes);
   return MEAL_TYPE_ORDER.filter((type) => unique.has(type));
+}
+
+export const COOKING_METHOD_LABELS: Record<CookingMethod, string> = {
+  oven: "Духовка",
+  airfryer: "Аэрогриль",
+  stove: "Плита",
+  multicooker: "Мультиварка",
+  microwave: "Микроволновка",
+};
+
+export const COOKING_METHOD_ORDER: CookingMethod[] = [
+  "oven",
+  "airfryer",
+  "stove",
+  "multicooker",
+  "microwave",
+];
+
+export function orderCookingMethods(methods: CookingMethod[]): CookingMethod[] {
+  const unique = new Set(methods);
+  return COOKING_METHOD_ORDER.filter((method) => unique.has(method));
 }
 
 export const WEEKDAY_LABELS = ["ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС"] as const;
@@ -255,4 +284,5 @@ export const DEFAULT_FAMILY_PROFILE: FamilyProfile = {
   scheduleNotes: "",
   cookWithLeftovers: false,
   cuisinePreference: "any",
+  cookingMethods: [...COOKING_METHOD_ORDER],
 };

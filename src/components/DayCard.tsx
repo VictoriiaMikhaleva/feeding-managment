@@ -3,6 +3,7 @@
 import type { DraggableAttributes } from "@dnd-kit/core";
 import type { MealPlanDay, MealType } from "@/lib/types";
 import { DIFFICULTY_LABELS, MEAL_TYPE_LABELS } from "@/lib/types";
+import { formatCookingMethods, getDishCookingMethods } from "@/lib/cooking-methods";
 import { Card } from "./Card";
 import { Button } from "./Button";
 
@@ -76,6 +77,9 @@ export function DayCard({
                   {DIFFICULTY_LABELS[meal.dish.difficulty]}
                   {meal.dish.batchCooking && " · с запасом"}
                   {meal.dish.takeawayFriendly && " · в контейнер"}
+                </p>
+                <p className="mt-0.5 text-xs text-sky-700/80">
+                  Способ: {formatCookingMethods(getDishCookingMethods(meal.dish))}
                 </p>
                 {meal.forWhom && (
                   <p className="mt-0.5 text-xs text-slate-600">{meal.forWhom}</p>

@@ -5,9 +5,11 @@ import type {
   SavedMenuEntry,
 } from "./types";
 import {
+  COOKING_METHOD_ORDER,
   createDefaultDayMealMembers,
   DEFAULT_FAMILY_PROFILE,
   MEAL_TYPE_ORDER,
+  orderCookingMethods,
   orderMealTypes,
 } from "./types";
 
@@ -53,6 +55,10 @@ function normalizeProfile(profile?: Partial<FamilyProfile>): FamilyProfile {
       orderMealTypes(merged.mealTypes).length > 0
         ? orderMealTypes(merged.mealTypes)
         : ["breakfast"],
+    cookingMethods:
+      orderCookingMethods(merged.cookingMethods).length > 0
+        ? orderCookingMethods(merged.cookingMethods)
+        : [...COOKING_METHOD_ORDER],
     dayMealMembers,
     adultNames:
       merged.adultNames?.length === merged.adultsCount

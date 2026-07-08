@@ -1,6 +1,7 @@
 import { DISHES } from "./dishes";
 import { expandAllergies } from "./allergy-map";
 import type { BudgetLevel, Dish, FamilyProfile, MealType } from "./types";
+import { getDishCookingMethods } from "./cooking-methods";
 
 const BUDGET_ORDER: Record<BudgetLevel, number> = {
   low: 0,
@@ -97,6 +98,10 @@ export function filterCandidatesForProfile(
     if (dish.mealType !== mealType) return false;
     if (!dishMatchesBudget(dish, profile.budget)) return false;
     if (dishContainsForbidden(dish, disliked, allergies)) return false;
+    const dishMethods = getDishCookingMethods(dish);
+    if (!dishMethods.some((method) => profile.cookingMethods.includes(method))) {
+      return false;
+    }
 
     if (profile.childrenCount > 0 && profile.adultsCount === 0) {
       return dish.forChildren;

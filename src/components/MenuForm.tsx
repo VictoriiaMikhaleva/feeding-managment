@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FamilyProfile, MealType } from "@/lib/types";
 import {
+  COOKING_METHOD_LABELS,
+  COOKING_METHOD_ORDER,
   BUDGET_LABELS,
   createDefaultDayMealMembers,
   CUISINE_LABELS,
@@ -10,6 +12,7 @@ import {
   FORM_PRESETS,
   MEAL_TYPE_LABELS,
   MEAL_TYPE_ORDER,
+  orderCookingMethods,
   orderMealTypes,
   WEEKDAY_LABELS,
 } from "@/lib/types";
@@ -75,6 +78,20 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
       return normalizeProfileState({
         ...prev,
         mealTypes: mealTypes.length ? mealTypes : [type],
+      });
+    });
+    setErrors([]);
+  };
+
+  const toggleCookingMethod = (method: (typeof COOKING_METHOD_ORDER)[number]) => {
+    setProfile((prev) => {
+      const has = prev.cookingMethods.includes(method);
+      const cookingMethods = has
+        ? prev.cookingMethods.filter((m) => m !== method)
+        : [...prev.cookingMethods, method];
+      return normalizeProfileState({
+        ...prev,
+        cookingMethods: cookingMethods.length ? cookingMethods : [method],
       });
     });
     setErrors([]);
@@ -378,6 +395,29 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
           </div>
         </div>
 
+        <div className="mt-4">
+          <span className="mb-2 block text-sm text-amber-800">
+            Способ приготовления
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {COOKING_METHOD_ORDER.map((method) => (
+              <button
+                key={method}
+                type="button"
+                onClick={() => toggleCookingMethod(method)}
+                className={[
+                  "rounded-xl px-4 py-2 text-sm font-medium transition-colors",
+                  profile.cookingMethods.includes(method)
+                    ? "bg-sky-600 text-white"
+                    : "bg-sky-50 text-sky-800 hover:bg-sky-100",
+                ].join(" ")}
+              >
+                {COOKING_METHOD_LABELS[method]}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="mt-4 rounded-xl border border-amber-200 bg-white/70 p-3">
           <p className="mb-2 text-sm font-medium text-amber-900">
             Расписание по дням: кто ест каждый приём пищи
@@ -598,5 +638,9 @@ function normalizeProfileState(profile: FamilyProfile): FamilyProfile {
         ? orderMealTypes(profile.mealTypes)
         : ["breakfast"],
     dayMealMembers,
+    cookingMethods:
+      profile.cookingMethods?.length > 0
+        ? orderCookingMethods(profile.cookingMethods)
+        : [...COOKING_METHOD_ORDER],
   };
 }
