@@ -6,9 +6,13 @@ import { Button } from "./Button";
 import { Card } from "./Card";
 
 interface SpeechRecognitionEventLike {
+  resultIndex: number;
   results: {
     length: number;
-    [index: number]: { [index: number]: { transcript: string } };
+    [index: number]: {
+      isFinal: boolean;
+      [index: number]: { transcript: string };
+    };
   };
 }
 
@@ -34,6 +38,8 @@ export function VoiceInput({ onApply }: VoiceInputProps) {
   const [transcript, setTranscript] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const shouldKeepListeningRef = useRef(false);
+  const finalTranscriptRef = useRef("");
 
   useEffect(() => {
     const w = window as Window & {
@@ -50,32 +56,55 @@ export function VoiceInput({ onApply }: VoiceInputProps) {
 
     const recognition = new SpeechRecognition();
     recognition.lang = "ru-RU";
-    recognition.continuous = false;
+    recognition.continuous = true;
     recognition.interimResults = true;
 
     recognition.onresult = (event: SpeechRecognitionEventLike) => {
-      const parts: string[] = [];
-      for (let i = 0; i < event.results.length; i++) {
-        parts.push(event.results[i][0].transcript);
+      let interim = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const phrase = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscriptRef.current = `${finalTranscriptRef.current} ${phrase}`.trim();
+        } else {
+          interim += ` ${phrase}`;
+        }
       }
-      setTranscript(parts.join(" ").trim());
-      setState("done");
+      setTranscript(`${finalTranscriptRef.current}${interim}`.trim());
     };
 
     recognition.onerror = () => {
+      shouldKeepListeningRef.current = false;
       setErrorMessage("Не удалось распознать речь. Попробуйте ещё раз.");
       setState("error");
     };
 
     recognition.onend = () => {
+      if (shouldKeepListeningRef.current) {
+        try {
+          recognition.start();
+          return;
+        } catch {
+          shouldKeepListeningRef.current = false;
+          setErrorMessage("Микрофон занят или недоступен.");
+          setState("error");
+          return;
+        }
+      }
       setState((prev) => (prev === "listening" ? "done" : prev));
     };
 
     recognitionRef.current = recognition;
+
+    return () => {
+      shouldKeepListeningRef.current = false;
+      recognition.stop();
+    };
   }, []);
 
   const startListening = useCallback(() => {
     if (!recognitionRef.current) return;
+    shouldKeepListeningRef.current = true;
+    finalTranscriptRef.current = "";
     setTranscript("");
     setErrorMessage("");
     setState("listening");
@@ -88,6 +117,7 @@ export function VoiceInput({ onApply }: VoiceInputProps) {
   }, []);
 
   const stopListening = useCallback(() => {
+    shouldKeepListeningRef.current = false;
     recognitionRef.current?.stop();
     setState("done");
   }, []);

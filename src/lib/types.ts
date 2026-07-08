@@ -125,6 +125,8 @@ export type VoiceInputState =
 export interface ParsedVoiceProfile {
   adultsCount?: number;
   childrenCount?: number;
+  adultNames?: string[];
+  childrenNames?: string[];
   days?: number;
   mealTypes?: MealType[];
   budget?: BudgetLevel;

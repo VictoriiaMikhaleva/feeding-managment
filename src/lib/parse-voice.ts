@@ -34,6 +34,100 @@ const NUMBER_WORDS: Record<string, number> = {
   семи: 7,
 };
 
+const NAME_STOP_WORDS = new Set([
+  "и",
+  "а",
+  "взрослые",
+  "взрослый",
+  "дети",
+  "ребенок",
+  "ребёнок",
+  "ребята",
+  "нас",
+  "у",
+  "зовут",
+  "это",
+  "мама",
+  "папа",
+  "сын",
+  "дочь",
+  "муж",
+  "жена",
+  "один",
+  "одна",
+  "два",
+  "две",
+  "двое",
+  "три",
+  "четыре",
+  "пять",
+  "шесть",
+  "семь",
+]);
+
+function toNameCase(value: string): string {
+  return value
+    .trim()
+    .split(/[-\s]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
+}
+
+function parseNamesChunk(raw: string): string[] {
+  const cleaned = raw
+    .replace(/[.!?]/g, " ")
+    .replace(/\b(взросл(ые|ый)?|дети|детей|реб(енок|ёнок|ята)|зовут|это)\b/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!cleaned) return [];
+
+  const chunks = cleaned
+    .split(/,| и /gi)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const names: string[] = [];
+  for (const chunk of chunks) {
+    const normalized = chunk.toLowerCase();
+    if (NAME_STOP_WORDS.has(normalized)) continue;
+    if (!/[a-zа-яё]/i.test(chunk)) continue;
+    if (chunk.length < 2) continue;
+    names.push(toNameCase(chunk));
+  }
+
+  return [...new Set(names)];
+}
+
+function extractNames(text: string, target: "adults" | "children"): string[] {
+  const pattern =
+    target === "adults"
+      ? /(взросл(?:ые|ый)?(?:\s+(?:это|зовут))?\s+)([^.!?\n]+)/gi
+      : /(дет(?:и|ей)|реб(?:енок|ёнок|ята))(?:\s+(?:это|зовут))?\s+([^.!?\n]+)/gi;
+
+  const names: string[] = [];
+  let match: RegExpExecArray | null = pattern.exec(text);
+  while (match) {
+    const rawNames = target === "adults" ? match[2] : match[2];
+    names.push(...parseNamesChunk(rawNames));
+    match = pattern.exec(text);
+  }
+
+  // Support phrasing like: "муж Иван, жена Анна"
+  if (target === "adults" && names.length === 0) {
+    const spouseMatch = text.match(/(?:муж|жена)\s+([а-яёa-z][а-яёa-z-]+)/gi);
+    if (spouseMatch) {
+      for (const token of spouseMatch) {
+        const parts = token.split(/\s+/);
+        if (parts[1]) names.push(toNameCase(parts[1]));
+      }
+    }
+  }
+
+  return [...new Set(names)];
+}
+
 function extractNumber(text: string, context: RegExp): number | undefined {
   const match = text.match(context);
   if (!match) return undefined;
@@ -101,6 +195,12 @@ export function parseVoiceTextToFamilyProfile(
       /(\d+|один|одна|два|две|двое|три|четыре|пять)\s*(?:дет|реб)/i,
     ) ??
     extractNumber(lower, /(?:и|плюс)\s+(\d+|двое|трое)\s*(?:дет|реб)/i);
+
+  const adultNames = extractNames(text, "adults");
+  if (adultNames.length > 0) result.adultNames = adultNames;
+
+  const childrenNames = extractNames(text, "children");
+  if (childrenNames.length > 0) result.childrenNames = childrenNames;
 
   result.days =
     extractNumber(lower, /(?:на|меню на)\s*(\d+|один|два|две|три|четыре|пять|шесть|семь)\s*дн/i) ??
@@ -222,10 +322,31 @@ export function mergeParsedIntoProfile(
   parsed: ParsedVoiceProfile,
   current: import("./types").FamilyProfile,
 ): import("./types").FamilyProfile {
+  const adultsCount = parsed.adultsCount ?? current.adultsCount;
+  const childrenCount = parsed.childrenCount ?? current.childrenCount;
+
+  const adultNames =
+    parsed.adultNames && parsed.adultNames.length > 0
+      ? Array.from(
+          { length: adultsCount },
+          (_, i) => parsed.adultNames?.[i] ?? `Взрослый ${i + 1}`,
+        )
+      : current.adultNames;
+
+  const childrenNames =
+    parsed.childrenNames && parsed.childrenNames.length > 0
+      ? Array.from(
+          { length: childrenCount },
+          (_, i) => parsed.childrenNames?.[i] ?? `Ребёнок ${i + 1}`,
+        )
+      : current.childrenNames;
+
   return {
     ...current,
-    adultsCount: parsed.adultsCount ?? current.adultsCount,
-    childrenCount: parsed.childrenCount ?? current.childrenCount,
+    adultsCount,
+    childrenCount,
+    adultNames,
+    childrenNames,
     days: parsed.days ?? current.days,
     mealTypes: parsed.mealTypes ?? current.mealTypes,
     budget: parsed.budget ?? current.budget,
