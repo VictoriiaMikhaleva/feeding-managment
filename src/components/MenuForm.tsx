@@ -16,32 +16,22 @@ import {
   orderMealTypes,
   WEEKDAY_LABELS,
 } from "@/lib/types";
-import {
-  mergeParsedIntoProfile,
-  parseVoiceTextToFamilyProfile,
-} from "@/lib/parse-voice";
 import { loadProfile } from "@/lib/storage";
 import { validateProfile } from "@/lib/validate-profile";
 import { Button } from "./Button";
 import { Card } from "./Card";
-import { VoiceInput } from "./VoiceInput";
 
 interface MenuFormProps {
   initialProfile?: FamilyProfile;
   onSubmit: (profile: FamilyProfile) => void;
 }
 
-type FillMode = "manual" | "voice";
-
 type Member = { id: string; role: "adult" | "child"; name: string };
 
 export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
-  const [fillMode, setFillMode] = useState<FillMode>("manual");
   const [profile, setProfile] = useState<FamilyProfile>(
     initialProfile ?? DEFAULT_FAMILY_PROFILE,
   );
-  const [voiceHints, setVoiceHints] = useState<string[]>([]);
-  const [voiceApplied, setVoiceApplied] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [loadedSaved, setLoadedSaved] = useState(false);
 
@@ -95,15 +85,6 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
         cookingMethods: cookingMethods.length ? cookingMethods : [method],
       });
     });
-    setErrors([]);
-  };
-
-  const handleVoiceApply = (text: string) => {
-    const parsed = parseVoiceTextToFamilyProfile(text);
-    setProfile((prev) => normalizeProfileState(mergeParsedIntoProfile(parsed, prev)));
-    setVoiceHints(parsed.unparsedHints);
-    setVoiceApplied(true);
-    setFillMode("manual");
     setErrors([]);
   };
 
@@ -215,46 +196,6 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
           ))}
         </div>
       </Card>
-
-      <Card>
-        <h2 className="mb-4 text-lg font-semibold text-amber-950">
-          Как заполнить форму?
-        </h2>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant={fillMode === "manual" ? "primary" : "outline"}
-            onClick={() => setFillMode("manual")}
-          >
-            Заполнить вручную
-          </Button>
-          <Button
-            type="button"
-            variant={fillMode === "voice" ? "primary" : "outline"}
-            onClick={() => setFillMode("voice")}
-          >
-            🎙️ Заполнить голосом
-          </Button>
-        </div>
-      </Card>
-
-      {fillMode === "voice" && <VoiceInput onApply={handleVoiceApply} />}
-
-      {voiceApplied && (
-        <div
-          className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900"
-          role="status"
-        >
-          <p className="font-medium">
-            ⚠️ Проверьте данные перед генерацией меню
-          </p>
-          {voiceHints.map((hint) => (
-            <p key={hint} className="mt-1 text-amber-800/80">
-              {hint}
-            </p>
-          ))}
-        </div>
-      )}
 
       {errors.length > 0 && (
         <div

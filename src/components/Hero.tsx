@@ -41,11 +41,6 @@ const benefits: {
     title: "Заготовки",
     text: "Подсказки, что приготовить с запасом на несколько дней",
   },
-  {
-    icon: "voice",
-    title: "Голосовой ввод",
-    text: "Расскажите о семье вслух — форма заполнится автоматически",
-  },
 ];
 
 export function Hero() {
@@ -166,7 +161,7 @@ export function Hero() {
             <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
               Шаг 1
             </p>
-            <p className="mt-1 text-sm text-amber-900">Заполните форму или продиктуйте голосом</p>
+            <p className="mt-1 text-sm text-amber-900">Заполните форму по семье и бюджету</p>
           </div>
           <div className="rounded-xl bg-amber-50 p-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
