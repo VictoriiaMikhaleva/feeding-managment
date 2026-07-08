@@ -24,14 +24,20 @@ interface SortableDayListProps {
   plan: GeneratedMealPlan;
   onPlanChange: (plan: GeneratedMealPlan) => void;
   onSwapMeal: (day: number, mealType: MealType) => void;
+  isMealSelected?: (day: number, mealType: MealType) => boolean;
+  onToggleMealSelection?: (day: number, mealType: MealType) => void;
 }
 
 function SortableDayItem({
   day,
   onSwapMeal,
+  isMealSelected,
+  onToggleMealSelection,
 }: {
   day: GeneratedMealPlan["days"][0];
   onSwapMeal: (day: number, mealType: MealType) => void;
+  isMealSelected?: (day: number, mealType: MealType) => boolean;
+  onToggleMealSelection?: (day: number, mealType: MealType) => void;
 }) {
   const {
     attributes,
@@ -52,6 +58,8 @@ function SortableDayItem({
       <DayCard
         day={day}
         onSwapMeal={onSwapMeal}
+        isMealSelected={isMealSelected}
+        onToggleMealSelection={onToggleMealSelection}
         dragAttributes={attributes}
         dragListeners={listeners}
         isDragging={isDragging}
@@ -64,6 +72,8 @@ export function SortableDayList({
   plan,
   onPlanChange,
   onSwapMeal,
+  isMealSelected,
+  onToggleMealSelection,
 }: SortableDayListProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -99,6 +109,8 @@ export function SortableDayList({
               key={day.day}
               day={day}
               onSwapMeal={onSwapMeal}
+              isMealSelected={isMealSelected}
+              onToggleMealSelection={onToggleMealSelection}
             />
           ))}
         </div>

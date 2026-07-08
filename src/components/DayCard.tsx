@@ -9,6 +9,8 @@ import { Button } from "./Button";
 interface DayCardProps {
   day: MealPlanDay;
   onSwapMeal?: (day: number, mealType: MealType) => void;
+  isMealSelected?: (day: number, mealType: MealType) => boolean;
+  onToggleMealSelection?: (day: number, mealType: MealType) => void;
   dragAttributes?: DraggableAttributes;
   dragListeners?: Record<string, Function>;
   isDragging?: boolean;
@@ -17,6 +19,8 @@ interface DayCardProps {
 export function DayCard({
   day,
   onSwapMeal,
+  isMealSelected,
+  onToggleMealSelection,
   dragAttributes,
   dragListeners,
   isDragging,
@@ -54,6 +58,16 @@ export function DayCard({
           >
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
+                {onToggleMealSelection && (
+                  <label className="mb-1 flex items-center gap-1.5 text-xs text-amber-700">
+                    <input
+                      type="checkbox"
+                      checked={isMealSelected?.(day.day, meal.mealType) ?? true}
+                      onChange={() => onToggleMealSelection(day.day, meal.mealType)}
+                    />
+                    В PDF
+                  </label>
+                )}
                 <p className="text-xs font-medium uppercase tracking-wide text-amber-600">
                   {MEAL_TYPE_LABELS[meal.mealType]}
                 </p>

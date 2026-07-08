@@ -4,6 +4,24 @@ import { jsPDF } from "jspdf";
 import type { GeneratedMealPlan } from "@/lib/types";
 import { DayMenuPdfSlide } from "@/components/pdf/DayMenuPdfSlide";
 
+function buildPdfPlan(
+  plan: GeneratedMealPlan,
+  selectedMealKeys?: Set<string>,
+): GeneratedMealPlan {
+  if (!selectedMealKeys) return plan;
+
+  const days = plan.days
+    .map((day) => ({
+      ...day,
+      meals: day.meals.filter((meal) =>
+        selectedMealKeys.has(`${day.day}-${meal.mealType}`),
+      ),
+    }))
+    .filter((day) => day.meals.length > 0);
+
+  return { ...plan, days };
+}
+
 async function renderDayToCanvas(day: GeneratedMealPlan["days"][0]) {
   const host = document.createElement("div");
   host.style.position = "fixed";
@@ -38,7 +56,9 @@ async function renderDayToCanvas(day: GeneratedMealPlan["days"][0]) {
 
 export async function generateMealPlanPdf(
   plan: GeneratedMealPlan,
+  selectedMealKeys?: Set<string>,
 ): Promise<Blob> {
+  const pdfPlan = buildPdfPlan(plan, selectedMealKeys);
   const pdf = new jsPDF({
     orientation: "landscape",
     unit: "px",
@@ -46,8 +66,8 @@ export async function generateMealPlanPdf(
     compress: true,
   });
 
-  for (let i = 0; i < plan.days.length; i++) {
-    const canvas = await renderDayToCanvas(plan.days[i]);
+  for (let i = 0; i < pdfPlan.days.length; i++) {
+    const canvas = await renderDayToCanvas(pdfPlan.days[i]);
     const imgData = canvas.toDataURL("image/jpeg", 0.92);
 
     if (i > 0) pdf.addPage([1123, 794], "landscape");
@@ -59,9 +79,10 @@ export async function generateMealPlanPdf(
 
 export async function downloadMealPlanPdf(
   plan: GeneratedMealPlan,
+  selectedMealKeys?: Set<string>,
   filename?: string,
 ): Promise<void> {
-  const blob = await generateMealPlanPdf(plan);
+  const blob = await generateMealPlanPdf(plan, selectedMealKeys);
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;

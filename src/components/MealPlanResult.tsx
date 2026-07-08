@@ -33,6 +33,14 @@ interface MealPlanResultProps {
   plan: GeneratedMealPlan;
 }
 
+function getAllMealSelectionKeys(plan: GeneratedMealPlan): Set<string> {
+  return new Set(
+    plan.days.flatMap((day) =>
+      day.meals.map((meal) => `${day.day}-${meal.mealType}`),
+    ),
+  );
+}
+
 export function MealPlanResult({ plan: initialPlan }: MealPlanResultProps) {
   const router = useRouter();
   const [plan, setPlan] = useState(initialPlan);
@@ -44,8 +52,13 @@ export function MealPlanResult({ plan: initialPlan }: MealPlanResultProps) {
   );
   const [pdfLoading, setPdfLoading] = useState(false);
   const [shoppingExportLoading, setShoppingExportLoading] = useState(false);
+  const [selectedMealsForPdf, setSelectedMealsForPdf] = useState<Set<string>>(
+    () => getAllMealSelectionKeys(initialPlan),
+  );
 
   const stats = getPlanStats(plan);
+  const totalMealsInPlan = plan.days.reduce((acc, day) => acc + day.meals.length, 0);
+  const selectedMealsCount = selectedMealsForPdf.size;
 
   const persistPlan = useCallback((next: GeneratedMealPlan) => {
     setPlan(next);
@@ -53,8 +66,10 @@ export function MealPlanResult({ plan: initialPlan }: MealPlanResultProps) {
   }, []);
 
   const handleRegenerate = () => {
-    persistPlan(generateMealPlan(plan.profile));
+    const regenerated = generateMealPlan(plan.profile);
+    persistPlan(regenerated);
     setChecked(new Set());
+    setSelectedMealsForPdf(getAllMealSelectionKeys(regenerated));
   };
 
   const handleSave = () => {
@@ -107,12 +122,30 @@ export function MealPlanResult({ plan: initialPlan }: MealPlanResultProps) {
   };
 
   const handleDownloadPdf = async () => {
+    if (selectedMealsForPdf.size === 0) return;
     setPdfLoading(true);
     try {
-      await downloadMealPlanPdf(plan);
+      await downloadMealPlanPdf(plan, selectedMealsForPdf);
     } finally {
       setPdfLoading(false);
     }
+  };
+
+  const handleToggleMealForPdf = (day: number, mealType: MealType) => {
+    const key = `${day}-${mealType}`;
+    setSelectedMealsForPdf((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const isMealSelectedForPdf = (day: number, mealType: MealType) =>
+    selectedMealsForPdf.has(`${day}-${mealType}`);
+
+  const handleSelectAllMealsForPdf = () => {
+    setSelectedMealsForPdf(getAllMealSelectionKeys(plan));
   };
 
   const handleDownloadShoppingTxt = () => {
@@ -154,12 +187,6 @@ export function MealPlanResult({ plan: initialPlan }: MealPlanResultProps) {
         <Button variant="secondary" onClick={handleSave}>
           {saved ? "✓ Сохранено" : "Сохранить меню"}
         </Button>
-        <Button variant="outline" onClick={handleCopyShoppingList}>
-          {copied === "list" ? "✓ Скопировано" : "Копировать список"}
-        </Button>
-        <Button variant="outline" onClick={handleDownloadShoppingTxt}>
-          Список .txt
-        </Button>
         <Button
           variant="outline"
           onClick={handleDownloadShoppingPdf}
@@ -167,16 +194,13 @@ export function MealPlanResult({ plan: initialPlan }: MealPlanResultProps) {
         >
           {shoppingExportLoading ? "Создаём PDF…" : "Список PDF"}
         </Button>
-        <Button variant="outline" onClick={handleCopyMenu}>
-          {copied === "menu" ? "✓ Меню скопировано" : "Копировать меню"}
-        </Button>
         <Button variant="outline" onClick={handlePrint}>
           Печать
         </Button>
         <Button
           variant="outline"
           onClick={handleDownloadPdf}
-          disabled={pdfLoading}
+          disabled={pdfLoading || selectedMealsForPdf.size === 0}
         >
           {pdfLoading ? "Создаём PDF…" : "PDF меню"}
         </Button>
@@ -210,9 +234,21 @@ export function MealPlanResult({ plan: initialPlan }: MealPlanResultProps) {
 
       {tab === "menu" && (
         <section>
-          <h2 className="mb-4 text-xl font-semibold text-amber-950">
-            Меню по дням
-          </h2>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-xl font-semibold text-amber-950">Меню по дням</h2>
+            <div className="flex flex-wrap items-center gap-2 print:hidden">
+              <span className="text-xs text-amber-700">
+                В PDF: {selectedMealsCount} из {totalMealsInPlan}
+              </span>
+              <Button
+                variant="outline"
+                className="px-3 py-2 text-xs"
+                onClick={handleSelectAllMealsForPdf}
+              >
+                Выбрать всё
+              </Button>
+            </div>
+          </div>
           <p className="mb-3 text-sm text-amber-700 print:hidden">
             Перетащите ⠿ чтобы изменить порядок дней · ↻ — заменить блюдо
           </p>
@@ -220,6 +256,8 @@ export function MealPlanResult({ plan: initialPlan }: MealPlanResultProps) {
             plan={plan}
             onPlanChange={persistPlan}
             onSwapMeal={handleSwapMeal}
+            isMealSelected={isMealSelectedForPdf}
+            onToggleMealSelection={handleToggleMealForPdf}
           />
 
           {plan.workLunchSuggestions.length > 0 && (
