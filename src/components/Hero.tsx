@@ -6,35 +6,43 @@ import type { SavedMenuEntry } from "@/lib/types";
 import { loadHistory, loadMealPlan } from "@/lib/storage";
 import { Button } from "./Button";
 import { Card } from "./Card";
+import {
+  BenefitIconBadge,
+  type BenefitIconId,
+} from "./icons/BenefitIcons";
 
-const benefits = [
+const benefits: {
+  icon: BenefitIconId;
+  title: string;
+  text: string;
+}[] = [
   {
-    icon: "⏱️",
+    icon: "time",
     title: "Экономия времени",
     text: "Меню на несколько дней без долгих раздумий каждый вечер",
   },
   {
-    icon: "💰",
+    icon: "budget",
     title: "Бюджетные блюда",
     text: "Подбор рецептов с учётом вашего уровня бюджета",
   },
   {
-    icon: "👨‍👩‍👧‍👦",
+    icon: "family",
     title: "Дети и взрослые",
     text: "Учитываем вкусы всех членов семьи",
   },
   {
-    icon: "🛒",
+    icon: "cart",
     title: "Список покупок",
     text: "Готовый перечень продуктов по категориям",
   },
   {
-    icon: "📦",
+    icon: "prep",
     title: "Заготовки",
     text: "Подсказки, что приготовить с запасом на несколько дней",
   },
   {
-    icon: "🎙️",
+    icon: "voice",
     title: "Голосовой ввод",
     text: "Расскажите о семье вслух — форма заполнится автоматически",
   },
@@ -144,12 +152,7 @@ export function Hero() {
             padding="sm"
             className="border-amber-200/70 bg-white/85 shadow-sm transition-transform duration-200 hover:-translate-y-1 hover:shadow-md"
           >
-            <div
-              className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-orange-100 to-amber-50 text-2xl"
-              aria-hidden
-            >
-              {b.icon}
-            </div>
+            <BenefitIconBadge id={b.icon} className="mb-3" />
             <h3 className="mb-1 font-semibold text-amber-950">{b.title}</h3>
             <p className="text-sm text-amber-800/70">{b.text}</p>
           </Card>
