@@ -1,3 +1,6 @@
+import { getDishCookingMethods } from "./cooking-methods";
+import { DISHES } from "./dishes";
+
 export function validateProfile(profile: import("./types").FamilyProfile): string[] {
   const errors: string[] = [];
 
@@ -14,6 +17,26 @@ export function validateProfile(profile: import("./types").FamilyProfile): strin
   }
   if (profile.cookingMethods.length === 0) {
     errors.push("Выберите хотя бы один способ приготовления");
+  }
+
+  for (const mealType of profile.mealTypes) {
+    const hasAtLeastOneDish = DISHES.some((dish) => {
+      if (dish.mealType !== mealType) return false;
+      const methods = getDishCookingMethods(dish);
+      return methods.some((method) => profile.cookingMethods.includes(method));
+    });
+
+    if (!hasAtLeastOneDish) {
+      const mealLabel =
+        mealType === "breakfast"
+          ? "завтрака"
+          : mealType === "lunch"
+            ? "обеда"
+            : "ужина";
+      errors.push(
+        `Для ${mealLabel} нет подходящих блюд под выбранные способы приготовления. Добавьте ещё один способ.`,
+      );
+    }
   }
 
   if (profile.adultNames.length !== profile.adultsCount) {

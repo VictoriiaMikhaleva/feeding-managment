@@ -109,7 +109,7 @@ export function Hero() {
                 Гибкость
               </p>
               <p className="mt-1 text-sm font-semibold text-amber-950">
-                С учетом вкусов каждого члена семьи
+                С учетом вкусов каждого члена семьи и способа приготовления
               </p>
             </div>
           </div>
