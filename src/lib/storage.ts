@@ -4,12 +4,10 @@ import type {
   MealType,
   SavedMenuEntry,
 } from "./types";
+import { normalizeFamilyProfile } from "./normalize-profile";
 import {
-  COOKING_METHOD_ORDER,
-  createDefaultDayMealMembers,
   DEFAULT_FAMILY_PROFILE,
   MEAL_TYPE_ORDER,
-  orderCookingMethods,
   orderMealTypes,
 } from "./types";
 
@@ -40,35 +38,8 @@ function normalizeProfile(profile?: Partial<FamilyProfile>): FamilyProfile {
     ...DEFAULT_FAMILY_PROFILE,
     ...(profile ?? {}),
   };
-  const dayMealMembers =
-    merged.dayMealMembers && merged.dayMealMembers.length > 0
-      ? merged.dayMealMembers
-      : createDefaultDayMealMembers(
-          merged.days,
-          merged.adultsCount,
-          merged.childrenCount,
-        );
 
-  return {
-    ...merged,
-    mealTypes:
-      orderMealTypes(merged.mealTypes).length > 0
-        ? orderMealTypes(merged.mealTypes)
-        : ["breakfast"],
-    cookingMethods:
-      orderCookingMethods(merged.cookingMethods).length > 0
-        ? orderCookingMethods(merged.cookingMethods)
-        : [...COOKING_METHOD_ORDER],
-    dayMealMembers,
-    adultNames:
-      merged.adultNames?.length === merged.adultsCount
-        ? merged.adultNames
-        : Array.from({ length: merged.adultsCount }, (_, i) => `Взрослый ${i + 1}`),
-    childrenNames:
-      merged.childrenNames?.length === merged.childrenCount
-        ? merged.childrenNames
-        : Array.from({ length: merged.childrenCount }, (_, i) => `Ребёнок ${i + 1}`),
-  };
+  return normalizeFamilyProfile(merged);
 }
 
 function mealTypeSortValue(mealType: MealType): number {

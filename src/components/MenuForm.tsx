@@ -1,21 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { FamilyProfile, MealType } from "@/lib/types";
 import {
   COOKING_METHOD_LABELS,
   COOKING_METHOD_ORDER,
   BUDGET_LABELS,
-  createDefaultDayMealMembers,
   CUISINE_LABELS,
   DEFAULT_FAMILY_PROFILE,
   FORM_PRESETS,
   MEAL_TYPE_LABELS,
   MEAL_TYPE_ORDER,
-  orderCookingMethods,
-  orderMealTypes,
   WEEKDAY_LABELS,
 } from "@/lib/types";
+import { normalizeFamilyProfile } from "@/lib/normalize-profile";
 import { loadProfile } from "@/lib/storage";
 import { validateProfile } from "@/lib/validate-profile";
 import { Button } from "./Button";
@@ -34,12 +32,13 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
   );
   const [errors, setErrors] = useState<string[]>([]);
   const [loadedSaved, setLoadedSaved] = useState(false);
+  const errorsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (initialProfile) return;
     const saved = loadProfile();
     if (saved) {
-      setProfile(saved);
+      setProfile(normalizeFamilyProfile(saved));
       setLoadedSaved(true);
     }
   }, [initialProfile]);
@@ -48,14 +47,18 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
     key: K,
     value: FamilyProfile[K],
   ) => {
-    setProfile((prev) => ({ ...prev, [key]: value }));
+    setProfile((prev) =>
+      key === "days"
+        ? normalizeFamilyProfile({ ...prev, days: value as number })
+        : { ...prev, [key]: value },
+    );
     setErrors([]);
   };
 
   const applyPreset = (presetId: string) => {
     const preset = FORM_PRESETS.find((p) => p.id === presetId);
     if (!preset) return;
-    setProfile((prev) => normalizeProfileState({ ...prev, ...preset.profile }));
+    setProfile((prev) => normalizeFamilyProfile({ ...prev, ...preset.profile }));
     setErrors([]);
   };
 
@@ -65,7 +68,7 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
       const mealTypes = has
         ? prev.mealTypes.filter((t) => t !== type)
         : [...prev.mealTypes, type];
-      return normalizeProfileState({
+      return normalizeFamilyProfile({
         ...prev,
         mealTypes: mealTypes.length ? mealTypes : [type],
       });
@@ -80,7 +83,7 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
       const cookingMethods = has
         ? currentMethods.filter((m) => m !== method)
         : [...currentMethods, method];
-      return normalizeProfileState({
+      return normalizeFamilyProfile({
         ...prev,
         cookingMethods: cookingMethods.length ? cookingMethods : [method],
       });
@@ -90,10 +93,14 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const normalizedProfile = normalizeProfileState(profile);
+    const normalizedProfile = normalizeFamilyProfile(profile);
     const validationErrors = validateProfile(normalizedProfile);
     if (validationErrors.length > 0) {
       setErrors(validationErrors);
+      setProfile(normalizedProfile);
+      requestAnimationFrame(() => {
+        errorsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
       return;
     }
     onSubmit(normalizedProfile);
@@ -119,7 +126,7 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
       const next = { ...prev };
       if (type === "adults") next.adultsCount = value;
       else next.childrenCount = value;
-      return normalizeProfileState(next);
+      return normalizeFamilyProfile(next);
     });
   };
 
@@ -534,6 +541,18 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
       </Card>
 
       <div className="flex flex-wrap gap-3">
+        {errors.length > 0 && (
+          <div
+            ref={errorsRef}
+            className="w-full rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+            role="alert"
+          >
+            <p className="mb-1 font-medium">Проверьте форму перед генерацией:</p>
+            {errors.map((err) => (
+              <p key={err}>{err}</p>
+            ))}
+          </div>
+        )}
         <Button type="submit" className="px-8 py-3 text-base">
           Сгенерировать меню
         </Button>
@@ -545,45 +564,4 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
       </p>
     </form>
   );
-}
-
-function normalizeProfileState(profile: FamilyProfile): FamilyProfile {
-  const adults = Math.max(0, profile.adultsCount);
-  const children = Math.max(0, profile.childrenCount);
-  const days = Math.max(1, Math.min(14, profile.days));
-
-  const adultNames = Array.from({ length: adults }, (_, i) => profile.adultNames[i] ?? `Взрослый ${i + 1}`);
-  const childrenNames = Array.from({ length: children }, (_, i) => profile.childrenNames[i] ?? `Ребёнок ${i + 1}`);
-  const defaultMatrix = createDefaultDayMealMembers(days, adults, children);
-  const validIds = new Set([
-    ...adultNames.map((_, i) => `adult-${i + 1}`),
-    ...childrenNames.map((_, i) => `child-${i + 1}`),
-  ]);
-
-  const dayMealMembers = Array.from({ length: days }, (_, dayIdx) => {
-    const saved = profile.dayMealMembers[dayIdx] ?? defaultMatrix[dayIdx];
-    return {
-      breakfast: (saved.breakfast ?? []).filter((id) => validIds.has(id)),
-      lunch: (saved.lunch ?? []).filter((id) => validIds.has(id)),
-      dinner: (saved.dinner ?? []).filter((id) => validIds.has(id)),
-    };
-  });
-
-  return {
-    ...profile,
-    adultsCount: adults,
-    childrenCount: children,
-    days,
-    adultNames,
-    childrenNames,
-    mealTypes:
-      orderMealTypes(profile.mealTypes).length > 0
-        ? orderMealTypes(profile.mealTypes)
-        : ["breakfast"],
-    dayMealMembers,
-    cookingMethods:
-      profile.cookingMethods?.length > 0
-        ? orderCookingMethods(profile.cookingMethods)
-        : [...COOKING_METHOD_ORDER],
-  };
 }
