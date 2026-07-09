@@ -167,7 +167,9 @@ export function Hero() {
             <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
               Шаг 2
             </p>
-            <p className="mt-1 text-sm text-amber-900">Отметьте подходящие блюда и настройте меню</p>
+            <p className="mt-1 text-sm text-amber-900">
+              Получите готовое меню, замените блюда и отметьте приёмы для PDF
+            </p>
           </div>
           <div className="rounded-xl bg-amber-50 p-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">

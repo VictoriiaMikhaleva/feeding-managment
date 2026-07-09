@@ -13,7 +13,7 @@ interface DayCardProps {
   isMealSelected?: (day: number, mealType: MealType) => boolean;
   onToggleMealSelection?: (day: number, mealType: MealType) => void;
   dragAttributes?: DraggableAttributes;
-  dragListeners?: Record<string, Function>;
+  dragListeners?: Record<string, unknown>;
   isDragging?: boolean;
 }
 

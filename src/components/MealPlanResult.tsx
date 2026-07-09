@@ -4,10 +4,7 @@ import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { GeneratedMealPlan, MealType } from "@/lib/types";
 import { generateMealPlan, getPlanStats } from "@/lib/generate-meal-plan";
-import {
-  formatMenuForCopy,
-  swapMealDish,
-} from "@/lib/meal-plan-actions";
+import { swapMealDish } from "@/lib/meal-plan-actions";
 import {
   downloadShoppingListPdf,
   downloadShoppingListTxt,
@@ -45,7 +42,7 @@ export function MealPlanResult({ plan: initialPlan }: MealPlanResultProps) {
   const router = useRouter();
   const [plan, setPlan] = useState(initialPlan);
   const [tab, setTab] = useState<ResultTab>("menu");
-  const [copied, setCopied] = useState<"list" | "menu" | null>(null);
+  const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
   const [checked, setChecked] = useState<Set<string>>(() =>
     loadCheckedItems(plan.generatedAt),
@@ -98,19 +95,8 @@ export function MealPlanResult({ plan: initialPlan }: MealPlanResultProps) {
     const text = formatShoppingListForCopy(plan.shoppingList, checked);
     try {
       await navigator.clipboard.writeText(text);
-      setCopied("list");
-      setTimeout(() => setCopied(null), 2000);
-    } catch {
-      /* clipboard unavailable */
-    }
-  };
-
-  const handleCopyMenu = async () => {
-    const text = formatMenuForCopy(plan);
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied("menu");
-      setTimeout(() => setCopied(null), 2000);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     } catch {
       /* clipboard unavailable */
     }
@@ -289,7 +275,7 @@ export function MealPlanResult({ plan: initialPlan }: MealPlanResultProps) {
                 className="px-3 py-2"
                 onClick={handleCopyShoppingList}
               >
-                {copied === "list" ? "✓ Скопировано" : "Копировать"}
+                {copied ? "✓ Скопировано" : "Копировать"}
               </Button>
               <Button
                 variant="outline"

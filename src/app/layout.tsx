@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Nunito } from "next/font/google";
 import { Header } from "@/components/Header";
+import { StorageBootstrap } from "@/components/StorageBootstrap";
 import "./globals.css";
 
 const nunito = Nunito({
@@ -22,6 +23,7 @@ export default function RootLayout({
   return (
     <html lang="ru" className={`${nunito.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-[#fffbf5]">
+        <StorageBootstrap />
         <Header />
         <main className="flex-1">{children}</main>
         <footer className="border-t border-amber-100 py-4 text-center text-xs text-amber-700/50">

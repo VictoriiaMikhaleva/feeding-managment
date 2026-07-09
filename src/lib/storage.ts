@@ -37,7 +37,11 @@ function saveIfChanged(key: string, nextValue: unknown, previousRaw?: string): v
   if (typeof window === "undefined") return;
   const nextRaw = JSON.stringify(nextValue);
   if (previousRaw !== nextRaw) {
-    safeSetItem(key, nextRaw);
+    try {
+      safeSetItem(key, nextRaw);
+    } catch (error) {
+      if (!(error instanceof StorageQuotaError)) throw error;
+    }
   }
 }
 
@@ -279,10 +283,42 @@ function loadAllChecked(): Record<string, string[]> {
   }
 }
 
+export function migrateStorage(): void {
+  if (typeof window === "undefined") return;
+
+  loadProfile();
+  loadMealPlan();
+  loadHistory();
+
+  const planRaw = localStorage.getItem(PLAN_KEY);
+  if (planRaw && planRaw.includes('"ingredients"')) {
+    const normalized = parseStoredPlan(planRaw);
+    if (normalized) {
+      try {
+        safeSetItem(
+          PLAN_KEY,
+          JSON.stringify(compactMealPlan(normalized)),
+          normalized.generatedAt,
+        );
+      } catch (error) {
+        if (error instanceof StorageQuotaError) {
+          pruneStorageForQuota(normalized.generatedAt);
+        }
+      }
+    }
+  }
+}
+
+export function clearAllHistory(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(HISTORY_KEY);
+}
+
 export function clearAllData(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(PROFILE_KEY);
   localStorage.removeItem(PLAN_KEY);
   localStorage.removeItem(HISTORY_KEY);
   localStorage.removeItem(CHECKED_KEY);
+  sessionStorage.removeItem(PLAN_SESSION_KEY);
 }

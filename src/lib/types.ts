@@ -114,32 +114,6 @@ export interface GeneratedMealPlan {
   generatedAt: string;
 }
 
-export type VoiceInputState =
-  | "idle"
-  | "listening"
-  | "processing"
-  | "done"
-  | "error"
-  | "unsupported";
-
-export interface ParsedVoiceProfile {
-  adultsCount?: number;
-  childrenCount?: number;
-  adultNames?: string[];
-  childrenNames?: string[];
-  days?: number;
-  mealTypes?: MealType[];
-  budget?: BudgetLevel;
-  adultFavorites?: string;
-  childrenFavorites?: string;
-  dislikedProducts?: string;
-  allergies?: string;
-  scheduleNotes?: string;
-  cookWithLeftovers?: boolean;
-  cuisinePreference?: CuisinePreference;
-  unparsedHints: string[];
-}
-
 export const MEAL_TYPE_LABELS: Record<MealType, string> = {
   breakfast: "Завтрак",
   lunch: "Обед",

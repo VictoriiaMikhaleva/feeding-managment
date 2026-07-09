@@ -6,6 +6,7 @@ import type { SavedMenuEntry } from "@/lib/types";
 import { BUDGET_LABELS } from "@/lib/types";
 import { downloadMealPlanPdf } from "@/lib/pdf/generate-meal-plan-pdf";
 import {
+  clearAllHistory,
   deleteHistoryEntry,
   loadHistory,
   saveMealPlan,
@@ -17,6 +18,7 @@ export function HistoryList() {
   const [entries, setEntries] = useState<SavedMenuEntry[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [pdfLoadingId, setPdfLoadingId] = useState<string | null>(null);
+  const [confirmClearAll, setConfirmClearAll] = useState(false);
 
   const refresh = useCallback(() => {
     setEntries(loadHistory());
@@ -49,6 +51,16 @@ export function HistoryList() {
     }
   };
 
+  const handleClearAll = () => {
+    if (!confirmClearAll) {
+      setConfirmClearAll(true);
+      return;
+    }
+    clearAllHistory();
+    setConfirmClearAll(false);
+    refresh();
+  };
+
   if (entries.length === 0) {
     return (
       <Card className="text-center">
@@ -61,7 +73,26 @@ export function HistoryList() {
   }
 
   return (
-    <ul className="space-y-4">
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <Button
+          variant={confirmClearAll ? "primary" : "ghost"}
+          onClick={handleClearAll}
+          className={
+            confirmClearAll
+              ? "bg-red-600 hover:bg-red-700"
+              : "text-red-700 hover:bg-red-50"
+          }
+        >
+          {confirmClearAll ? "Подтвердить очистку" : "Очистить всю историю"}
+        </Button>
+        {confirmClearAll && (
+          <Button variant="ghost" onClick={() => setConfirmClearAll(false)}>
+            Отмена
+          </Button>
+        )}
+      </div>
+      <ul className="space-y-4">
       {entries.map((entry) => {
         const p = entry.plan.profile;
         const savedDate = new Date(entry.savedAt).toLocaleString("ru-RU", {
@@ -136,6 +167,7 @@ export function HistoryList() {
           </li>
         );
       })}
-    </ul>
+      </ul>
+    </div>
   );
 }
