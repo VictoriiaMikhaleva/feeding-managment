@@ -20,15 +20,11 @@ npm start
 
 ## GitHub Pages
 
-Проект настроен на статический экспорт (`next build` -> папка `out`) и автодеплой через GitHub Actions.
+Сайт: `https://victoriiamikhaleva.github.io/feeding-managment/`
 
-1. Убедитесь, что основной branch — `main`.
-2. В репозитории откройте **Settings → Pages**.
-3. В разделе **Build and deployment** выберите **Source: GitHub Actions**.
-4. После push в `main` workflow `.github/workflows/deploy-pages.yml` соберет и опубликует сайт.
+**Важно:** в Settings → Pages → Build and deployment источник должен быть **GitHub Actions**, не «Deploy from branch / main». Иначе GitHub покажет README вместо приложения, и стили не загрузятся.
 
-Для этого репозитория сайт будет доступен по пути:
-`https://victoriiamikhaleva.github.io/feeding-managment/`
+После push в `main` workflow `.github/workflows/deploy-pages.yml` соберёт `out/` (с `.nojekyll`, чтобы папка `_next` не отбрасывалась) и опубликует сайт.
 
 ## Возможности
 

@@ -22,7 +22,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru" className={`${nunito.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col bg-[#fffbf5]">
+      <body className="flex min-h-full flex-col">
         <StorageBootstrap />
         <Header />
         <main className="flex-1">{children}</main>
