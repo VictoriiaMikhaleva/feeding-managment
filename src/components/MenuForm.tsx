@@ -8,7 +8,6 @@ import {
   BUDGET_LABELS,
   CUISINE_LABELS,
   DEFAULT_FAMILY_PROFILE,
-  FORM_PRESETS,
   MEAL_TYPE_LABELS,
   MEAL_TYPE_ORDER,
   WEEKDAY_LABELS,
@@ -52,13 +51,6 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
         ? normalizeFamilyProfile({ ...prev, days: value as number })
         : { ...prev, [key]: value },
     );
-    setErrors([]);
-  };
-
-  const applyPreset = (presetId: string) => {
-    const preset = FORM_PRESETS.find((p) => p.id === presetId);
-    if (!preset) return;
-    setProfile((prev) => normalizeFamilyProfile({ ...prev, ...preset.profile }));
     setErrors([]);
   };
 
@@ -157,7 +149,7 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
       if (set.has(memberId)) set.delete(memberId);
       else set.add(memberId);
       dayMealMembers[dayIndex][mealType] = [...set];
-      return { ...prev, dayMealMembers };
+      return normalizeFamilyProfile({ ...prev, dayMealMembers });
     });
     setErrors([]);
   };
@@ -173,7 +165,7 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
       const current = dayMealMembers[dayIndex][mealType];
       dayMealMembers[dayIndex][mealType] =
         current.length === allIds.length ? [] : allIds;
-      return { ...prev, dayMealMembers };
+      return normalizeFamilyProfile({ ...prev, dayMealMembers });
     });
   };
 
@@ -184,25 +176,6 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
           Загружены сохранённые настройки — можно изменить и сгенерировать снова
         </div>
       )}
-
-      <Card>
-        <h2 className="mb-3 text-lg font-semibold text-amber-950">
-          Быстрые шаблоны
-        </h2>
-        <div className="flex flex-wrap gap-2">
-          {FORM_PRESETS.map((preset) => (
-            <Button
-              key={preset.id}
-              type="button"
-              variant="outline"
-              className="text-xs"
-              onClick={() => applyPreset(preset.id)}
-            >
-              {preset.label}
-            </Button>
-          ))}
-        </div>
-      </Card>
 
       {errors.length > 0 && (
         <div
@@ -540,22 +513,24 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
         </p>
       </Card>
 
-      <div className="flex flex-wrap gap-3">
-        {errors.length > 0 && (
-          <div
-            ref={errorsRef}
-            className="w-full rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-            role="alert"
-          >
-            <p className="mb-1 font-medium">Проверьте форму перед генерацией:</p>
-            {errors.map((err) => (
-              <p key={err}>{err}</p>
-            ))}
-          </div>
-        )}
-        <Button type="submit" className="px-8 py-3 text-base">
-          Сгенерировать меню
-        </Button>
+      <div className="sticky bottom-0 z-10 -mx-4 border-t border-amber-100 bg-[#fffbf5]/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0">
+        <div className="flex flex-wrap gap-3">
+          {errors.length > 0 && (
+            <div
+              ref={errorsRef}
+              className="w-full rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+              role="alert"
+            >
+              <p className="mb-1 font-medium">Проверьте форму перед генерацией:</p>
+              {errors.map((err) => (
+                <p key={err}>{err}</p>
+              ))}
+            </div>
+          )}
+          <Button type="submit" fullWidth className="px-8 py-3 text-base sm:w-auto">
+            Сгенерировать меню
+          </Button>
+        </div>
       </div>
 
       <p className="text-xs text-amber-700/60">
