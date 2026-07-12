@@ -45,6 +45,8 @@ export interface Dish {
   takeawayFriendly?: boolean;
   cuisine?: CuisinePreference[];
   cookingMethods?: CookingMethod[];
+  /** Примерная калорийность одной порции, ккал */
+  caloriesPerServing?: number;
 }
 
 export interface FamilyProfile {

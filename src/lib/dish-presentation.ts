@@ -1,4 +1,5 @@
 import type { Dish, MealType } from "./types";
+import { getDishCalories } from "./dish-calories";
 
 export interface DishPresentation {
   description: string;
@@ -113,12 +114,15 @@ export function getDishPresentation(
   mealType: MealType,
 ): DishPresentation {
   const nutrition = adjustNutrition(dish, mealType);
+  const calories = getDishCalories(dish);
+  const scale = nutrition.cal > 0 ? calories / nutrition.cal : 1;
+
   return {
     description: buildDescription(dish),
-    calories: nutrition.cal,
-    protein: nutrition.protein,
-    fat: nutrition.fat,
-    carbs: nutrition.carbs,
+    calories,
+    protein: Math.round(nutrition.protein * scale),
+    fat: Math.round(nutrition.fat * scale),
+    carbs: Math.round(nutrition.carbs * scale),
     cookTimeMin: nutrition.time,
     benefit: pickBenefit(dish, mealType),
     imageGradient: pickGradient(dish),

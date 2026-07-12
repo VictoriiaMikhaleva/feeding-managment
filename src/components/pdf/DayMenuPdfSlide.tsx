@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import type { MealPlanDay, MealType, PlannedMeal } from "@/lib/types";
 import { MEAL_TYPE_LABELS } from "@/lib/types";
 import { formatCookingMethods, getDishCookingMethods } from "@/lib/cooking-methods";
+import { formatDishCalories, getDayCaloriesTotal } from "@/lib/dish-calories";
 import {
   formatIngredientsShort,
   getDishPresentation,
@@ -170,7 +171,7 @@ function MealColumn({
           color: "#5C5348",
         }}
       >
-        <span style={chipStyle}>🔥 {p.calories} ккал</span>
+        <span style={chipStyle}>🔥 {formatDishCalories(meal.dish)}</span>
         <span style={chipStyle}>Б {p.protein} г</span>
         <span style={chipStyle}>Ж {p.fat} г</span>
         <span style={chipStyle}>У {p.carbs} г</span>
@@ -231,6 +232,7 @@ const chipStyle: CSSProperties = {
 
 export function DayMenuPdfSlide({ day }: DayMenuPdfSlideProps) {
   const mealMap = new Map(day.meals.map((m) => [m.mealType, m]));
+  const dayCalories = getDayCaloriesTotal(day);
 
   return (
     <div style={pageStyle} data-pdf-page>
@@ -267,6 +269,12 @@ export function DayMenuPdfSlide({ day }: DayMenuPdfSlideProps) {
           }}
         >
           Простой, сбалансированный и вкусный план питания
+          {dayCalories > 0 && (
+            <>
+              {" "}
+              · ~{dayCalories} ккал за день
+            </>
+          )}
         </p>
       </header>
 
@@ -309,7 +317,7 @@ export function DayMenuPdfSlide({ day }: DayMenuPdfSlideProps) {
           color: "#B5A898",
         }}
       >
-        Меню носит рекомендательный характер. КБЖУ — ориентировочные значения.
+        Меню носит рекомендательный характер. Калорийность и КБЖУ — ориентировочные значения на порцию.
       </p>
     </div>
   );

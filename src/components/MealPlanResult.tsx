@@ -11,6 +11,7 @@ import {
 } from "@/lib/export-shopping-list";
 import { downloadMealPlanPdf } from "@/lib/pdf/generate-meal-plan-pdf";
 import { formatShoppingListForCopy } from "@/lib/shopping-list";
+import { getPlanCaloriesAverage } from "@/lib/dish-calories";
 import {
   addToHistory,
   loadCheckedItems,
@@ -54,6 +55,7 @@ export function MealPlanResult({ plan: initialPlan }: MealPlanResultProps) {
   );
 
   const stats = getPlanStats(plan);
+  const avgDayCalories = getPlanCaloriesAverage(plan);
   const totalMealsInPlan = plan.days.reduce((acc, day) => acc + day.meals.length, 0);
   const selectedMealsCount = selectedMealsForPdf.size;
 
@@ -161,6 +163,9 @@ export function MealPlanResult({ plan: initialPlan }: MealPlanResultProps) {
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-amber-800">
           <span>{stats.totalMeals} приёмов пищи</span>
           <span>{stats.uniqueDishes} разных блюд</span>
+          {avgDayCalories > 0 && (
+            <span>~{avgDayCalories} ккал/день</span>
+          )}
           <span>{stats.batchCount} с запасом</span>
           {stats.takeawayCount > 0 && (
             <span>{stats.takeawayCount} в контейнер</span>
@@ -310,7 +315,7 @@ export function MealPlanResult({ plan: initialPlan }: MealPlanResultProps) {
       )}
 
       <p className="text-xs text-amber-700/60 print:hidden">
-        Меню носит рекомендательный характер. При аллергиях и медицинских
+        Меню носит рекомендательный характер. Калорийность и КБЖУ — ориентировочные значения на порцию. При аллергиях и медицинских
         ограничениях проконсультируйтесь со специалистом.
       </p>
 
