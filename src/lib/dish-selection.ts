@@ -11,6 +11,21 @@ const BUDGET_ORDER: Record<BudgetLevel, number> = {
 
 const REPEAT_COOLDOWN = 3;
 const TOP_CANDIDATES_POOL = 4;
+/** Не более N дней подряд одно и то же блюдо на одном приёме пищи */
+export const MAX_CONSECUTIVE_SAME_DISH = 2;
+
+export function wouldExceedConsecutiveSame(
+  dishId: string,
+  dayIndex: number,
+  dishIdsByDay: string[],
+): boolean {
+  let streak = 1;
+  for (let i = dayIndex - 1; i >= 0; i--) {
+    if (dishIdsByDay[i] === dishId) streak++;
+    else break;
+  }
+  return streak > MAX_CONSECUTIVE_SAME_DISH;
+}
 
 function parseKeywords(text: string): string[] {
   return text
@@ -124,16 +139,19 @@ function scoreForPick(
   dish: Dish,
   baseIndex: number,
   total: number,
-  usedRecently: Map<string, number>,
+  usedRecentlyForMeal: Map<string, number>,
   dayIndex: number,
   preferTakeaway: boolean,
   usedInPlan: Set<string>,
   tagCounts: Map<string, number>,
 ): number {
   let score = total - baseIndex;
-  const lastUsed = usedRecently.get(dish.id);
+  const lastUsed = usedRecentlyForMeal.get(dish.id);
   if (lastUsed !== undefined && dayIndex - lastUsed < REPEAT_COOLDOWN) {
     score -= 15;
+  }
+  if (lastUsed !== undefined && dayIndex - lastUsed === 1) {
+    score -= 8;
   }
   if (usedInPlan.has(dish.id)) score -= 20;
   if (preferTakeaway && dish.takeawayFriendly) score += 6;
@@ -150,14 +168,22 @@ function scoreForPick(
 /** Выбор из топ-кандидатов с лёгкой случайностью для разнообразия */
 export function pickDishFromCandidates(
   candidates: Dish[],
-  usedRecently: Map<string, number>,
+  usedRecentlyByMeal: Map<string, number>,
   dayIndex: number,
   preferTakeaway = false,
   excludeIds: Set<string> = new Set(),
   tagCounts: Map<string, number> = new Map(),
+  dishIdsByDayForMeal: string[] = [],
 ): Dish | null {
-  const available = candidates.filter((d) => !excludeIds.has(d.id));
-  if (available.length === 0) return null;
+  const withoutSameDay = candidates.filter((d) => !excludeIds.has(d.id));
+  if (withoutSameDay.length === 0) return null;
+
+  let available = withoutSameDay.filter(
+    (d) => !wouldExceedConsecutiveSame(d.id, dayIndex, dishIdsByDayForMeal),
+  );
+  if (available.length === 0) {
+    available = withoutSameDay;
+  }
 
   const scored = available.map((dish, index) => ({
     dish,
@@ -165,7 +191,7 @@ export function pickDishFromCandidates(
       dish,
       index,
       available.length,
-      usedRecently,
+      usedRecentlyByMeal,
       dayIndex,
       preferTakeaway,
       excludeIds,

@@ -2,6 +2,7 @@ import type {
   FamilyProfile,
   GeneratedMealPlan,
   MealPlanDay,
+  MealType,
   PlannedMeal,
   WorkLunchSuggestion,
 } from "./types";
@@ -85,7 +86,8 @@ function mealMatchesSelectedMembers(
 }
 
 export function generateMealPlan(profile: FamilyProfile): GeneratedMealPlan {
-  const usedRecently = new Map<string, number>();
+  const usedRecentlyByMeal = new Map<MealType, Map<string, number>>();
+  const dishHistoryByMeal = new Map<MealType, string[]>();
   const tagCounts = new Map<string, number>();
   const days: MealPlanDay[] = [];
   const workLunchSuggestions: WorkLunchSuggestion[] = [];
@@ -107,18 +109,26 @@ export function generateMealPlan(profile: FamilyProfile): GeneratedMealPlan {
       const candidates = filterCandidatesForProfile(mealType, profile).filter((dish) =>
         mealMatchesSelectedMembers(dish, selectedMembers),
       );
+      const recentForMeal =
+        usedRecentlyByMeal.get(mealType) ?? new Map<string, number>();
+      const historyForMeal = dishHistoryByMeal.get(mealType) ?? [];
       const dish = pickDishFromCandidates(
         candidates,
-        usedRecently,
+        recentForMeal,
         d,
         preferTakeaway,
         dayUsedIds,
         tagCounts,
+        historyForMeal,
       );
 
       if (!dish) continue;
 
-      usedRecently.set(dish.id, d);
+      recentForMeal.set(dish.id, d);
+      usedRecentlyByMeal.set(mealType, recentForMeal);
+      const nextHistory = [...historyForMeal];
+      nextHistory[d] = dish.id;
+      dishHistoryByMeal.set(mealType, nextHistory);
       dayUsedIds.add(dish.id);
       updateTagCounts(tagCounts, dish);
 

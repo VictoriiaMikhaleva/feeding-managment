@@ -48,9 +48,20 @@ export function swapMealDish(
   );
   usedIds.delete(currentMeal.dish.id);
 
-  const usedRecently = new Map<string, number>();
+  const usedRecentlyByMeal = new Map<string, number>();
   plan.days.forEach((d, i) => {
-    d.meals.forEach((m) => usedRecently.set(m.dish.id, i));
+    d.meals.forEach((m) => {
+      if (m.mealType === mealType) {
+        usedRecentlyByMeal.set(m.dish.id, i);
+      }
+    });
+  });
+
+  const dishIdsByDay: string[] = [];
+  plan.days.forEach((d, i) => {
+    if (i === dayIndex) return;
+    const meal = d.meals.find((m) => m.mealType === mealType);
+    if (meal) dishIdsByDay[i] = meal.dish.id;
   });
 
   const candidates = filterCandidatesForProfile(
@@ -60,10 +71,12 @@ export function swapMealDish(
 
   const newDish = pickDishFromCandidates(
     candidates,
-    usedRecently,
+    usedRecentlyByMeal,
     dayIndex,
     false,
     usedIds,
+    undefined,
+    dishIdsByDay,
   );
 
   if (!newDish) return plan;
