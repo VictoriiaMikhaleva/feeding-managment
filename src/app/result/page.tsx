@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -9,8 +10,20 @@ import {
   loadMealPlan,
   saveMealPlan,
 } from "@/lib/storage";
-import { MealPlanResult } from "@/components/MealPlanResult";
 import { Button } from "@/components/Button";
+
+const MealPlanResult = dynamic(
+  () =>
+    import("@/components/MealPlanResult").then((mod) => mod.MealPlanResult),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex min-h-[40vh] items-center justify-center text-amber-700">
+        Загрузка меню…
+      </div>
+    ),
+  },
+);
 
 function ResultContent() {
   const router = useRouter();
@@ -18,23 +31,30 @@ function ResultContent() {
   const historyId = searchParams.get("id");
   const [plan, setPlan] = useState<GeneratedMealPlan | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
-    let loaded: GeneratedMealPlan | null = null;
+    try {
+      let loaded: GeneratedMealPlan | null = null;
 
-    if (historyId) {
-      const entry = loadHistoryEntry(historyId);
-      loaded = entry?.plan ?? null;
-      if (loaded) saveMealPlan(loaded);
-    } else {
-      loaded = loadMealPlan();
-    }
+      if (historyId) {
+        const entry = loadHistoryEntry(historyId);
+        loaded = entry?.plan ?? null;
+        if (loaded) saveMealPlan(loaded);
+      } else {
+        loaded = loadMealPlan();
+      }
 
-    setPlan(loaded);
-    setLoading(false);
+      setPlan(loaded);
+      setLoading(false);
 
-    if (!loaded) {
-      router.replace("/form");
+      if (!loaded) {
+        router.replace("/form");
+      }
+    } catch (error) {
+      console.error("Failed to load meal plan:", error);
+      setLoadError("Не удалось открыть меню. Попробуйте сгенерировать его снова.");
+      setLoading(false);
     }
   }, [historyId, router]);
 
@@ -42,6 +62,17 @@ function ResultContent() {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-amber-700">
         Загрузка меню…
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="mx-auto max-w-md px-4 py-16 text-center">
+        <p className="mb-4 text-amber-800">{loadError}</p>
+        <Link href="/form">
+          <Button>Составить меню</Button>
+        </Link>
       </div>
     );
   }

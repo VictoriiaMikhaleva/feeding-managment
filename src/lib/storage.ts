@@ -14,6 +14,7 @@ import {
 const PROFILE_KEY = "family-menu-profile";
 const PLAN_KEY = "family-menu-plan";
 const PLAN_SESSION_KEY = "family-menu-plan-session";
+const PLAN_HANDOFF_KEY = "family-menu-plan-handoff";
 const PROFILE_SESSION_KEY = "family-menu-profile-session";
 const HISTORY_KEY = "family-menu-history";
 const CHECKED_KEY = "family-menu-checked";
@@ -191,6 +192,59 @@ function parseStoredPlan(raw: string): GeneratedMealPlan | null {
   return normalizePlan(expanded);
 }
 
+function planPayloadFrom(plan: GeneratedMealPlan): string {
+  return JSON.stringify(compactMealPlan(normalizePlan(plan)));
+}
+
+/** Свежесгенерированное меню — надёжная передача form → result в одной вкладке */
+export function savePlanHandoff(plan: GeneratedMealPlan): void {
+  if (typeof window === "undefined") return;
+  const payload = planPayloadFrom(plan);
+  memoryCache.planPayload = payload;
+  try {
+    sessionStorage.setItem(PLAN_HANDOFF_KEY, payload);
+  } catch {
+    /* memory fallback remains */
+  }
+}
+
+export function consumePlanHandoff(): GeneratedMealPlan | null {
+  if (typeof window === "undefined") return null;
+
+  const raw = sessionStorage.getItem(PLAN_HANDOFF_KEY);
+  if (!raw) return null;
+
+  sessionStorage.removeItem(PLAN_HANDOFF_KEY);
+  const parsed = parseStoredPlan(raw);
+  if (parsed) {
+    memoryCache.planPayload = raw;
+  }
+  return parsed;
+}
+
+function loadPlanFromAnySource(): GeneratedMealPlan | null {
+  if (typeof window === "undefined") return null;
+
+  const handoff = consumePlanHandoff();
+  if (handoff) return handoff;
+
+  const rawSources = [
+    memoryCache.planPayload,
+    sessionStorage.getItem(PLAN_SESSION_KEY),
+    localStorage.getItem(PLAN_KEY),
+  ].filter((raw): raw is string => Boolean(raw));
+
+  for (const raw of rawSources) {
+    const normalized = parseStoredPlan(raw);
+    if (normalized) {
+      memoryCache.planPayload = JSON.stringify(compactMealPlan(normalized));
+      return normalized;
+    }
+  }
+
+  return null;
+}
+
 export function saveProfile(profile: FamilyProfile): void {
   const payload = JSON.stringify(normalizeProfile(profile));
   persistPayload(PROFILE_KEY, PROFILE_SESSION_KEY, payload, "profile");
@@ -208,30 +262,23 @@ export function loadProfile(): FamilyProfile | null {
 }
 
 export function saveMealPlan(plan: GeneratedMealPlan): void {
-  const compact = compactMealPlan(normalizePlan(plan));
-  const payload = JSON.stringify(compact);
+  const payload = planPayloadFrom(plan);
   persistPayload(PLAN_KEY, PLAN_SESSION_KEY, payload, "plan", plan.generatedAt);
 }
 
 export function loadMealPlan(): GeneratedMealPlan | null {
-  const raw = readPayload(PLAN_KEY, PLAN_SESSION_KEY, "plan");
-  if (!raw) return null;
-
-  const normalized = parseStoredPlan(raw);
+  const normalized = loadPlanFromAnySource();
   if (!normalized) return null;
 
-  if (localStorage.getItem(PLAN_KEY)) {
-    const compact = compactMealPlan(normalized);
-    const compactRaw = JSON.stringify(compact);
-    if (raw !== compactRaw) {
-      persistPayload(
-        PLAN_KEY,
-        PLAN_SESSION_KEY,
-        compactRaw,
-        "plan",
-        normalized.generatedAt,
-      );
-    }
+  const compactRaw = JSON.stringify(compactMealPlan(normalized));
+  if (localStorage.getItem(PLAN_KEY) !== compactRaw) {
+    persistPayload(
+      PLAN_KEY,
+      PLAN_SESSION_KEY,
+      compactRaw,
+      "plan",
+      normalized.generatedAt,
+    );
   }
   return normalized;
 }
@@ -365,11 +412,15 @@ export function migrateStorage(): void {
   pruneStorageForQuota();
 
   const planRaw = localStorage.getItem(PLAN_KEY);
-  if (planRaw?.includes('"ingredients"')) {
+  if (planRaw) {
     const normalized = parseStoredPlan(planRaw);
-    if (normalized) {
-      saveMealPlan(normalized);
-    } else {
+    if (planRaw.includes('"ingredients"')) {
+      if (normalized) {
+        saveMealPlan(normalized);
+      } else {
+        localStorage.removeItem(PLAN_KEY);
+      }
+    } else if (!normalized) {
       localStorage.removeItem(PLAN_KEY);
     }
   }
@@ -391,6 +442,7 @@ export function clearAllData(): void {
   localStorage.removeItem(HISTORY_KEY);
   localStorage.removeItem(CHECKED_KEY);
   sessionStorage.removeItem(PLAN_SESSION_KEY);
+  sessionStorage.removeItem(PLAN_HANDOFF_KEY);
   sessionStorage.removeItem(PROFILE_SESSION_KEY);
   memoryCache.planPayload = null;
   memoryCache.profilePayload = null;

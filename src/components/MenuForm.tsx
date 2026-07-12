@@ -21,11 +21,12 @@ import { Card } from "./Card";
 interface MenuFormProps {
   initialProfile?: FamilyProfile;
   onSubmit: (profile: FamilyProfile) => void;
+  submitDisabled?: boolean;
 }
 
 type Member = { id: string; role: "adult" | "child"; name: string };
 
-export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
+export function MenuForm({ initialProfile, onSubmit, submitDisabled = false }: MenuFormProps) {
   const [profile, setProfile] = useState<FamilyProfile>(
     initialProfile ?? DEFAULT_FAMILY_PROFILE,
   );
@@ -527,8 +528,8 @@ export function MenuForm({ initialProfile, onSubmit }: MenuFormProps) {
               ))}
             </div>
           )}
-          <Button type="submit" fullWidth className="px-8 py-3 text-base sm:w-auto">
-            Сгенерировать меню
+          <Button type="submit" fullWidth className="px-8 py-3 text-base sm:w-auto" disabled={submitDisabled}>
+            {submitDisabled ? "Генерируем…" : "Сгенерировать меню"}
           </Button>
         </div>
       </div>
