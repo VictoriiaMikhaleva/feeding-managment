@@ -39,8 +39,12 @@ export function normalizeFamilyProfile(profile: FamilyProfile): FamilyProfile {
     ...childrenNames.map((_, i) => `child-${i + 1}`),
   ]);
 
+  const savedMembers = Array.isArray(profile.dayMealMembers)
+    ? profile.dayMealMembers
+    : [];
+
   const dayMealMembers = Array.from({ length: days }, (_, dayIdx) => {
-    const saved = profile.dayMealMembers[dayIdx];
+    const saved = savedMembers[dayIdx];
     const defaults = defaultMatrix[dayIdx];
     const meals: MealType[] = ["breakfast", "lunch", "dinner"];
 

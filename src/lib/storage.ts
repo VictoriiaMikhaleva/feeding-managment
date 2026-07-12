@@ -8,6 +8,7 @@ import { normalizeFamilyProfile } from "./normalize-profile";
 import { compactMealPlan, expandMealPlan } from "./plan-storage";
 import { clearStashedPlan, peekStashedPlan, takeStashedPlan } from "./plan-handoff";
 import {
+  createDefaultDayMealMembers,
   DEFAULT_FAMILY_PROFILE,
   MEAL_TYPE_ORDER,
 } from "./types";
@@ -158,10 +159,26 @@ function pruneStorageForQuota(keepPlanId?: string): void {
 }
 
 function normalizeProfile(profile?: Partial<FamilyProfile>): FamilyProfile {
-  const merged = {
+  const merged: FamilyProfile = {
     ...DEFAULT_FAMILY_PROFILE,
     ...(profile ?? {}),
   };
+
+  if (!Array.isArray(merged.dayMealMembers)) {
+    merged.dayMealMembers = createDefaultDayMealMembers(
+      merged.days,
+      merged.adultsCount,
+      merged.childrenCount,
+    );
+  }
+
+  if (!Array.isArray(merged.mealTypes) || merged.mealTypes.length === 0) {
+    merged.mealTypes = [...DEFAULT_FAMILY_PROFILE.mealTypes];
+  }
+
+  if (!Array.isArray(merged.cookingMethods) || merged.cookingMethods.length === 0) {
+    merged.cookingMethods = [...DEFAULT_FAMILY_PROFILE.cookingMethods];
+  }
 
   return normalizeFamilyProfile(merged);
 }
@@ -186,11 +203,16 @@ function normalizePlan(plan: GeneratedMealPlan): GeneratedMealPlan {
 }
 
 function parseStoredPlan(raw: string): GeneratedMealPlan | null {
-  const parsed = safelyParseJson<GeneratedMealPlan>(raw);
-  if (!parsed) return null;
-  const expanded = expandMealPlan(parsed);
-  if (!expanded) return null;
-  return normalizePlan(expanded);
+  try {
+    const parsed = safelyParseJson<GeneratedMealPlan>(raw);
+    if (!parsed) return null;
+    const expanded = expandMealPlan(parsed);
+    if (!expanded) return null;
+    return normalizePlan(expanded);
+  } catch (error) {
+    console.warn("Failed to parse stored meal plan:", error);
+    return null;
+  }
 }
 
 function planPayloadFrom(plan: GeneratedMealPlan): string {
@@ -346,12 +368,16 @@ export function loadHistory(): SavedMenuEntry[] {
 
   const normalized = parsed
     .map((entry) => {
-      const expanded = expandMealPlan(entry.plan);
-      if (!expanded) return null;
-      return {
-        ...entry,
-        plan: normalizePlan(expanded),
-      };
+      try {
+        const expanded = expandMealPlan(entry.plan);
+        if (!expanded) return null;
+        return {
+          ...entry,
+          plan: normalizePlan(expanded),
+        };
+      } catch {
+        return null;
+      }
     })
     .filter((entry): entry is SavedMenuEntry => entry !== null);
 
@@ -431,31 +457,34 @@ function loadAllChecked(): Record<string, string[]> {
 export function migrateStorage(): void {
   if (typeof window === "undefined") return;
 
-  pruneStorageForQuota();
+  try {
+    pruneStorageForQuota();
 
-  const planRaw = localStorage.getItem(PLAN_KEY);
-  if (planRaw) {
-    const normalized = parseStoredPlan(planRaw);
-    if (planRaw.includes('"ingredients"')) {
-      if (normalized) {
-        saveMealPlan(normalized);
-      } else {
+    const planRaw = localStorage.getItem(PLAN_KEY);
+    if (planRaw) {
+      const normalized = parseStoredPlan(planRaw);
+      if (planRaw.includes('"ingredients"')) {
+        if (normalized) {
+          saveMealPlan(normalized);
+        } else {
+          localStorage.removeItem(PLAN_KEY);
+        }
+      } else if (!normalized) {
         localStorage.removeItem(PLAN_KEY);
       }
-    } else if (!normalized) {
-      localStorage.removeItem(PLAN_KEY);
     }
-  }
 
-  loadProfile();
-  loadHistory();
+    loadProfile();
+    loadHistory();
 
-  // Не вызываем loadMealPlan() — иначе съедается handoff до открытия result
-  if (!peekStashedPlan()) {
-    const sessionRaw = sessionStorage.getItem(PLAN_SESSION_KEY);
-    if (sessionRaw && !parseStoredPlan(sessionRaw)) {
-      sessionStorage.removeItem(PLAN_SESSION_KEY);
+    if (!peekStashedPlan()) {
+      const sessionRaw = sessionStorage.getItem(PLAN_SESSION_KEY);
+      if (sessionRaw && !parseStoredPlan(sessionRaw)) {
+        sessionStorage.removeItem(PLAN_SESSION_KEY);
+      }
     }
+  } catch (error) {
+    console.warn("Storage migration failed:", error);
   }
 }
 

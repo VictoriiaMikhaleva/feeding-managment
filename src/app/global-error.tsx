@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import Link from "next/link";
-import { Button } from "@/components/Button";
+import { appPath } from "@/lib/app-path";
 
 export default function GlobalError({
   error,
@@ -17,19 +16,59 @@ export default function GlobalError({
 
   return (
     <html lang="ru">
-      <body className="flex min-h-screen flex-col items-center justify-center bg-[#fffbf5] px-4 text-center">
-        <p className="mb-2 text-lg font-semibold text-amber-950">
+      <body
+        style={{
+          margin: 0,
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "24px",
+          textAlign: "center",
+          background: "#fffbf5",
+          color: "#451a03",
+          fontFamily: "system-ui, sans-serif",
+        }}
+      >
+        <p style={{ fontSize: "18px", fontWeight: 700, marginBottom: "8px" }}>
           Не удалось загрузить страницу
         </p>
-        <p className="mb-6 max-w-md text-sm text-amber-800">
-          Попробуйте обновить страницу. Если ошибка повторяется — откройте сайт
-          заново через главную.
+        <p style={{ fontSize: "14px", maxWidth: "420px", marginBottom: "24px" }}>
+          Попробуйте обновить страницу. Если ошибка повторяется — откройте
+          сайт заново через главную.
         </p>
-        <div className="flex flex-wrap justify-center gap-3">
-          <Button onClick={() => reset()}>Обновить</Button>
-          <Link href="/">
-            <Button variant="outline">На главную</Button>
-          </Link>
+        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center" }}>
+          <button
+            type="button"
+            onClick={() => reset()}
+            style={{
+              padding: "10px 20px",
+              borderRadius: "12px",
+              border: "none",
+              background: "#ea580c",
+              color: "white",
+              cursor: "pointer",
+              fontWeight: 600,
+            }}
+          >
+            Обновить
+          </button>
+          <button
+            type="button"
+            onClick={() => window.location.assign(appPath("/"))}
+            style={{
+              padding: "10px 20px",
+              borderRadius: "12px",
+              border: "2px solid #fcd34d",
+              background: "white",
+              color: "#92400e",
+              cursor: "pointer",
+              fontWeight: 600,
+            }}
+          >
+            На главную
+          </button>
         </div>
       </body>
     </html>

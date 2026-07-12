@@ -48,8 +48,14 @@ export function Hero() {
   const [history, setHistory] = useState<SavedMenuEntry[]>([]);
 
   useEffect(() => {
-    setHasCurrentPlan(hasStoredMealPlan());
-    setHistory(loadHistory().slice(0, 3));
+    try {
+      setHasCurrentPlan(hasStoredMealPlan());
+      setHistory(loadHistory().slice(0, 3));
+    } catch (error) {
+      console.warn("Failed to load saved menus:", error);
+      setHasCurrentPlan(false);
+      setHistory([]);
+    }
   }, []);
 
   return (
