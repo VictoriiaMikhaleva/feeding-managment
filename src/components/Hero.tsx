@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { SavedMenuEntry } from "@/lib/types";
-import { loadHistory, loadMealPlan } from "@/lib/storage";
+import { loadHistory, hasStoredMealPlan } from "@/lib/storage";
 import { Button } from "./Button";
 import { Card } from "./Card";
 import {
@@ -48,7 +48,7 @@ export function Hero() {
   const [history, setHistory] = useState<SavedMenuEntry[]>([]);
 
   useEffect(() => {
-    setHasCurrentPlan(!!loadMealPlan());
+    setHasCurrentPlan(hasStoredMealPlan());
     setHistory(loadHistory().slice(0, 3));
   }, []);
 

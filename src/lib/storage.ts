@@ -6,6 +6,7 @@ import type {
 } from "./types";
 import { normalizeFamilyProfile } from "./normalize-profile";
 import { compactMealPlan, expandMealPlan } from "./plan-storage";
+import { clearStashedPlan, peekStashedPlan, takeStashedPlan } from "./plan-handoff";
 import {
   DEFAULT_FAMILY_PROFILE,
   MEAL_TYPE_ORDER,
@@ -214,16 +215,22 @@ export function consumePlanHandoff(): GeneratedMealPlan | null {
   const raw = sessionStorage.getItem(PLAN_HANDOFF_KEY);
   if (!raw) return null;
 
-  sessionStorage.removeItem(PLAN_HANDOFF_KEY);
   const parsed = parseStoredPlan(raw);
   if (parsed) {
-    memoryCache.planPayload = raw;
+    sessionStorage.removeItem(PLAN_HANDOFF_KEY);
+    memoryCache.planPayload = JSON.stringify(compactMealPlan(parsed));
+    return parsed;
   }
-  return parsed;
+
+  sessionStorage.removeItem(PLAN_HANDOFF_KEY);
+  return null;
 }
 
 function loadPlanFromAnySource(): GeneratedMealPlan | null {
   if (typeof window === "undefined") return null;
+
+  const stashed = takeStashedPlan();
+  if (stashed) return stashed;
 
   const handoff = consumePlanHandoff();
   if (handoff) return handoff;
@@ -281,6 +288,21 @@ export function loadMealPlan(): GeneratedMealPlan | null {
     );
   }
   return normalized;
+}
+
+/** Проверка без потребления handoff / stashed-плана (для главной) */
+export function hasStoredMealPlan(): boolean {
+  if (typeof window === "undefined") return false;
+  if (peekStashedPlan()) return true;
+  if (sessionStorage.getItem(PLAN_HANDOFF_KEY)) return true;
+
+  const rawSources = [
+    memoryCache.planPayload,
+    sessionStorage.getItem(PLAN_SESSION_KEY),
+    localStorage.getItem(PLAN_KEY),
+  ].filter((raw): raw is string => Boolean(raw));
+
+  return rawSources.some((raw) => parseStoredPlan(raw) !== null);
 }
 
 export function addToHistory(plan: GeneratedMealPlan): void {
@@ -426,8 +448,15 @@ export function migrateStorage(): void {
   }
 
   loadProfile();
-  loadMealPlan();
   loadHistory();
+
+  // Не вызываем loadMealPlan() — иначе съедается handoff до открытия result
+  if (!peekStashedPlan()) {
+    const sessionRaw = sessionStorage.getItem(PLAN_SESSION_KEY);
+    if (sessionRaw && !parseStoredPlan(sessionRaw)) {
+      sessionStorage.removeItem(PLAN_SESSION_KEY);
+    }
+  }
 }
 
 export function clearAllHistory(): void {
@@ -444,6 +473,7 @@ export function clearAllData(): void {
   sessionStorage.removeItem(PLAN_SESSION_KEY);
   sessionStorage.removeItem(PLAN_HANDOFF_KEY);
   sessionStorage.removeItem(PROFILE_SESSION_KEY);
+  clearStashedPlan();
   memoryCache.planPayload = null;
   memoryCache.profilePayload = null;
 }

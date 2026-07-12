@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { FamilyProfile } from "@/lib/types";
 import { generateMealPlan } from "@/lib/generate-meal-plan";
+import { stashPlanForNavigation } from "@/lib/plan-handoff";
 import {
   addToHistory,
   saveMealPlan,
@@ -36,12 +37,26 @@ export default function FormPage() {
         return;
       }
 
+      stashPlanForNavigation(plan);
       savePlanHandoff(plan);
       saveMealPlan(plan);
       saveProfile(profile);
-      addToHistory(plan);
 
-      router.push("/result");
+      try {
+        addToHistory(plan);
+      } catch {
+        /* история необязательна для перехода на result */
+      }
+
+      router.push("/result/");
+
+      window.setTimeout(() => {
+        if (window.location.pathname.includes("/form")) {
+          window.location.assign(
+            window.location.pathname.replace(/\/form\/?$/, "/result/"),
+          );
+        }
+      }, 1500);
     } catch (error) {
       console.error("Meal plan generation failed:", error);
       setSubmitError(

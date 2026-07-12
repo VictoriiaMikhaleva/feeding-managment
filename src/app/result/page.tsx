@@ -1,6 +1,5 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -10,20 +9,8 @@ import {
   loadMealPlan,
   saveMealPlan,
 } from "@/lib/storage";
+import { MealPlanResult } from "@/components/MealPlanResult";
 import { Button } from "@/components/Button";
-
-const MealPlanResult = dynamic(
-  () =>
-    import("@/components/MealPlanResult").then((mod) => mod.MealPlanResult),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex min-h-[40vh] items-center justify-center text-amber-700">
-        Загрузка меню…
-      </div>
-    ),
-  },
-);
 
 function ResultContent() {
   const router = useRouter();
@@ -53,7 +40,9 @@ function ResultContent() {
       }
     } catch (error) {
       console.error("Failed to load meal plan:", error);
-      setLoadError("Не удалось открыть меню. Попробуйте сгенерировать его снова.");
+      setLoadError(
+        "Не удалось открыть меню. Попробуйте сгенерировать его снова.",
+      );
       setLoading(false);
     }
   }, [historyId, router]);
