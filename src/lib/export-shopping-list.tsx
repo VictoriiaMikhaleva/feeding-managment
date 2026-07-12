@@ -1,9 +1,18 @@
 import { createRoot } from "react-dom/client";
-import html2canvas from "html2canvas";
-import { jsPDF } from "jspdf";
 import { ShoppingListPdfSlide } from "@/components/pdf/ShoppingListPdfSlide";
 import type { GeneratedMealPlan } from "./types";
 import { formatShoppingListForCopy } from "./shopping-list";
+
+async function loadPdfLibs() {
+  const [html2canvasModule, jspdfModule] = await Promise.all([
+    import("html2canvas"),
+    import("jspdf"),
+  ]);
+  return {
+    html2canvas: html2canvasModule.default,
+    jsPDF: jspdfModule.jsPDF,
+  };
+}
 
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
@@ -37,6 +46,8 @@ export function downloadShoppingListTxt(
 }
 
 async function renderShoppingListCanvas(plan: GeneratedMealPlan) {
+  const { html2canvas } = await loadPdfLibs();
+
   const host = document.createElement("div");
   host.style.position = "fixed";
   host.style.left = "-10000px";
@@ -76,6 +87,7 @@ async function renderShoppingListCanvas(plan: GeneratedMealPlan) {
 export async function downloadShoppingListPdf(
   plan: GeneratedMealPlan,
 ): Promise<void> {
+  const { jsPDF } = await loadPdfLibs();
   const canvas = await renderShoppingListCanvas(plan);
   const imgData = canvas.toDataURL("image/jpeg", 0.92);
 

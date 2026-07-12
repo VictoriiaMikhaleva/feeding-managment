@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import type { FamilyProfile } from "@/lib/types";
 import { generateMealPlan } from "@/lib/generate-meal-plan";
+import { navigateToAppPath } from "@/lib/app-path";
 import { stashPlanForNavigation } from "@/lib/plan-handoff";
 import {
   addToHistory,
@@ -18,7 +18,6 @@ function countMealsInPlan(plan: ReturnType<typeof generateMealPlan>): number {
 }
 
 export default function FormPage() {
-  const router = useRouter();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -48,15 +47,7 @@ export default function FormPage() {
         /* история необязательна для перехода на result */
       }
 
-      router.push("/result/");
-
-      window.setTimeout(() => {
-        if (window.location.pathname.includes("/form")) {
-          window.location.assign(
-            window.location.pathname.replace(/\/form\/?$/, "/result/"),
-          );
-        }
-      }, 1500);
+      navigateToAppPath("/result");
     } catch (error) {
       console.error("Meal plan generation failed:", error);
       setSubmitError(

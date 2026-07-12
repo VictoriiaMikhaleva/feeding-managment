@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import type { SavedMenuEntry } from "@/lib/types";
 import { BUDGET_LABELS } from "@/lib/types";
-import { downloadMealPlanPdf } from "@/lib/pdf/generate-meal-plan-pdf";
 import {
   clearAllHistory,
   deleteHistoryEntry,
@@ -45,6 +44,9 @@ export function HistoryList() {
   const handlePdf = async (entry: SavedMenuEntry) => {
     setPdfLoadingId(entry.id);
     try {
+      const { downloadMealPlanPdf } = await import(
+        "@/lib/pdf/generate-meal-plan-pdf"
+      );
       await downloadMealPlanPdf(entry.plan);
     } finally {
       setPdfLoadingId(null);

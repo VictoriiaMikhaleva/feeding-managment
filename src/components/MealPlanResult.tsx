@@ -5,11 +5,6 @@ import { useRouter } from "next/navigation";
 import type { GeneratedMealPlan, MealType } from "@/lib/types";
 import { generateMealPlan, getPlanStats } from "@/lib/generate-meal-plan";
 import { swapMealDish } from "@/lib/meal-plan-actions";
-import {
-  downloadShoppingListPdf,
-  downloadShoppingListTxt,
-} from "@/lib/export-shopping-list";
-import { downloadMealPlanPdf } from "@/lib/pdf/generate-meal-plan-pdf";
 import { formatShoppingListForCopy } from "@/lib/shopping-list";
 import { getPlanCaloriesAverage } from "@/lib/dish-calories";
 import {
@@ -113,6 +108,9 @@ export function MealPlanResult({ plan: initialPlan }: MealPlanResultProps) {
     if (selectedMealsForPdf.size === 0) return;
     setPdfLoading(true);
     try {
+      const { downloadMealPlanPdf } = await import(
+        "@/lib/pdf/generate-meal-plan-pdf"
+      );
       await downloadMealPlanPdf(plan, selectedMealsForPdf);
     } finally {
       setPdfLoading(false);
@@ -136,13 +134,17 @@ export function MealPlanResult({ plan: initialPlan }: MealPlanResultProps) {
     setSelectedMealsForPdf(getAllMealSelectionKeys(plan));
   };
 
-  const handleDownloadShoppingTxt = () => {
+  const handleDownloadShoppingTxt = async () => {
+    const { downloadShoppingListTxt } = await import("@/lib/export-shopping-list");
     downloadShoppingListTxt(plan, checked);
   };
 
   const handleDownloadShoppingPdf = async () => {
     setShoppingExportLoading(true);
     try {
+      const { downloadShoppingListPdf } = await import(
+        "@/lib/export-shopping-list"
+      );
       await downloadShoppingListPdf(plan);
     } finally {
       setShoppingExportLoading(false);

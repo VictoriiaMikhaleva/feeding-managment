@@ -1,8 +1,17 @@
 import { createRoot } from "react-dom/client";
-import html2canvas from "html2canvas";
-import { jsPDF } from "jspdf";
-import type { GeneratedMealPlan } from "@/lib/types";
 import { DayMenuPdfSlide } from "@/components/pdf/DayMenuPdfSlide";
+import type { GeneratedMealPlan } from "@/lib/types";
+
+async function loadPdfLibs() {
+  const [html2canvasModule, jspdfModule] = await Promise.all([
+    import("html2canvas"),
+    import("jspdf"),
+  ]);
+  return {
+    html2canvas: html2canvasModule.default,
+    jsPDF: jspdfModule.jsPDF,
+  };
+}
 
 function buildPdfPlan(
   plan: GeneratedMealPlan,
@@ -23,6 +32,8 @@ function buildPdfPlan(
 }
 
 async function renderDayToCanvas(day: GeneratedMealPlan["days"][0]) {
+  const { html2canvas } = await loadPdfLibs();
+
   const host = document.createElement("div");
   host.style.position = "fixed";
   host.style.left = "-10000px";
@@ -58,6 +69,7 @@ export async function generateMealPlanPdf(
   plan: GeneratedMealPlan,
   selectedMealKeys?: Set<string>,
 ): Promise<Blob> {
+  const { jsPDF } = await loadPdfLibs();
   const pdfPlan = buildPdfPlan(plan, selectedMealKeys);
   const pdf = new jsPDF({
     orientation: "landscape",
