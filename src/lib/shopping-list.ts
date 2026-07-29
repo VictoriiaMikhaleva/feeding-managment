@@ -1,23 +1,6 @@
+import { normalizeIngredientName } from "./ingredient-tokens";
 import type { Dish, FamilyProfile, ShoppingListCategory } from "./types";
 import { SHOPPING_CATEGORY_LABELS } from "./types";
-
-const INGREDIENT_ALIASES: Record<string, string> = {
-  "куриное филе": "курица",
-  "куриный фарш": "курица (фарш)",
-  "филе белой рыбы": "рыба",
-  "рыбные палочки": "рыбные палочки",
-  "тунец консервированный": "тунец",
-  "горошек замороженный": "горошек",
-  "овощи замороженные": "овощи (заморозка)",
-  "фасоль консервированная": "фасоль",
-  "перец болгарский": "перец",
-  "масло сливочное": "масло",
-};
-
-function normalizeIngredientName(name: string): string {
-  const lower = name.toLowerCase().trim();
-  return INGREDIENT_ALIASES[lower] ?? name;
-}
 
 function capitalizeFirst(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);

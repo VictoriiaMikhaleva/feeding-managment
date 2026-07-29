@@ -1,5 +1,5 @@
 import type { Dish, MealType } from "./types";
-import { getDishCalories } from "./dish-calories";
+import { getDishNutrition } from "./dish-calories";
 
 export interface DishPresentation {
   description: string;
@@ -12,15 +12,6 @@ export interface DishPresentation {
   imageGradient: [string, string];
   imageAccent: string;
 }
-
-const MEAL_BASE: Record<
-  MealType,
-  { cal: number; protein: number; fat: number; carbs: number; time: number }
-> = {
-  breakfast: { cal: 380, protein: 14, fat: 12, carbs: 48, time: 20 },
-  lunch: { cal: 520, protein: 28, fat: 18, carbs: 55, time: 40 },
-  dinner: { cal: 480, protein: 26, fat: 16, carbs: 42, time: 45 },
-};
 
 const BENEFIT_BY_TAG: Record<string, string> = {
   мясо: "Богато белком",
@@ -86,44 +77,29 @@ function pickGradient(dish: Dish): [string, string] {
   return GRADIENT_BY_TAG.default;
 }
 
-function adjustNutrition(dish: Dish, mealType: MealType) {
-  const base = { ...MEAL_BASE[mealType] };
-  if (dish.tags.includes("мясо")) {
-    base.protein += 8;
-    base.cal += 60;
-  }
-  if (dish.tags.includes("рыба")) {
-    base.protein += 6;
-    base.fat += 4;
-  }
-  if (dish.tags.includes("овощи")) {
-    base.carbs -= 5;
-    base.fat -= 3;
-  }
-  if (dish.tags.includes("быстро")) {
-    base.time = Math.max(10, base.time - 15);
-  }
-  if (dish.difficulty === "hard") base.time += 25;
-  if (dish.difficulty === "easy") base.time -= 10;
-  if (dish.batchCooking) base.time += 10;
-  return base;
+function estimateCookTime(dish: Dish): number {
+  let time =
+    dish.mealType === "breakfast" ? 20 : dish.mealType === "lunch" ? 40 : 45;
+  if (dish.tags.includes("быстро")) time = Math.max(10, time - 15);
+  if (dish.difficulty === "hard") time += 25;
+  if (dish.difficulty === "easy") time -= 10;
+  if (dish.batchCooking) time += 10;
+  return time;
 }
 
 export function getDishPresentation(
   dish: Dish,
   mealType: MealType,
 ): DishPresentation {
-  const nutrition = adjustNutrition(dish, mealType);
-  const calories = getDishCalories(dish);
-  const scale = nutrition.cal > 0 ? calories / nutrition.cal : 1;
+  const nutrition = getDishNutrition(dish);
 
   return {
     description: buildDescription(dish),
-    calories,
-    protein: Math.round(nutrition.protein * scale),
-    fat: Math.round(nutrition.fat * scale),
-    carbs: Math.round(nutrition.carbs * scale),
-    cookTimeMin: nutrition.time,
+    calories: nutrition.calories,
+    protein: nutrition.protein,
+    fat: nutrition.fat,
+    carbs: nutrition.carbs,
+    cookTimeMin: estimateCookTime(dish),
     benefit: pickBenefit(dish, mealType),
     imageGradient: pickGradient(dish),
     imageAccent: ACCENT_BY_MEAL[mealType],

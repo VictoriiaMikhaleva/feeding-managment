@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import type { MealPlanDay, MealType, PlannedMeal } from "@/lib/types";
 import { MEAL_TYPE_LABELS } from "@/lib/types";
 import { formatCookingMethods, getDishCookingMethods } from "@/lib/cooking-methods";
-import { formatDishCalories, getDayCaloriesTotal } from "@/lib/dish-calories";
+import { formatDishNutrition, getDayCaloriesTotal } from "@/lib/dish-calories";
 import {
   formatIngredientsShort,
   getDishPresentation,
@@ -171,10 +171,7 @@ function MealColumn({
           color: "#5C5348",
         }}
       >
-        <span style={chipStyle}>🔥 {formatDishCalories(meal.dish)}</span>
-        <span style={chipStyle}>Б {p.protein} г</span>
-        <span style={chipStyle}>Ж {p.fat} г</span>
-        <span style={chipStyle}>У {p.carbs} г</span>
+        <span style={chipStyle}>🔥 {formatDishNutrition(meal.dish)}</span>
         <span style={chipStyle}>⏱ {p.cookTimeMin} мин</span>
       </div>
 

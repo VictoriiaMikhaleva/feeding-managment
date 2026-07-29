@@ -180,6 +180,10 @@ function normalizeProfile(profile?: Partial<FamilyProfile>): FamilyProfile {
     merged.cookingMethods = [...DEFAULT_FAMILY_PROFILE.cookingMethods];
   }
 
+  if (merged.dishCatalogMode !== "custom_only") {
+    merged.dishCatalogMode = "all";
+  }
+
   return normalizeFamilyProfile(merged);
 }
 

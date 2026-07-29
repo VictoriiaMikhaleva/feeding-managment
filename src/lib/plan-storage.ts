@@ -1,11 +1,13 @@
-import { DISHES } from "./dishes";
+import { getDishById } from "./dish-catalog";
 import type {
   GeneratedMealPlan,
   MealPlanDay,
   PlannedMeal,
 } from "./types";
 
-const DISH_BY_ID = new Map(DISHES.map((dish) => [dish.id, dish]));
+function resolveDish(dishId: string) {
+  return getDishById(dishId);
+}
 
 type CompactPlannedMeal = {
   mealType: PlannedMeal["mealType"];
@@ -56,7 +58,7 @@ export function expandMealPlan(
 
     for (const meal of day.meals) {
       if (isCompactMeal(meal)) {
-        const dish = DISH_BY_ID.get(meal.dishId);
+        const dish = resolveDish(meal.dishId);
         if (!dish) continue;
         meals.push({
           mealType: meal.mealType,

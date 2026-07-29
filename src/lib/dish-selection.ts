@@ -1,4 +1,4 @@
-import { DISHES } from "./dishes";
+import { getCatalogDishes } from "./dish-catalog";
 import { expandAllergies } from "./allergy-map";
 import type { BudgetLevel, Dish, FamilyProfile, MealType } from "./types";
 import { getDishCookingMethods } from "./cooking-methods";
@@ -13,6 +13,30 @@ const REPEAT_COOLDOWN = 3;
 const TOP_CANDIDATES_POOL = 4;
 /** Не более N дней подряд одно и то же блюдо на одном приёме пищи */
 export const MAX_CONSECUTIVE_SAME_DISH = 2;
+/** Не более N раз в одной календарной неделе (7 дней) */
+export const MAX_SAME_DISH_PER_WEEK = 2;
+
+export function countDishInWeek(
+  dishId: string,
+  dayIndex: number,
+  dishIdsByDay: string[],
+): number {
+  const weekStart = Math.floor(dayIndex / 7) * 7;
+  const weekEnd = weekStart + 7;
+  let count = 0;
+  for (let i = weekStart; i < weekEnd; i++) {
+    if (dishIdsByDay[i] === dishId) count++;
+  }
+  return count;
+}
+
+export function wouldExceedWeeklySame(
+  dishId: string,
+  dayIndex: number,
+  dishIdsByDay: string[],
+): boolean {
+  return countDishInWeek(dishId, dayIndex, dishIdsByDay) >= MAX_SAME_DISH_PER_WEEK;
+}
 
 export function wouldExceedConsecutiveSame(
   dishId: string,
@@ -109,7 +133,7 @@ export function filterCandidatesForProfile(
   const adultFavs = parseKeywords(profile.adultFavorites);
   const childFavs = parseKeywords(profile.childrenFavorites);
 
-  return DISHES.filter((dish) => {
+  return getCatalogDishes(profile).filter((dish) => {
     if (dish.mealType !== mealType) return false;
     if (!dishMatchesBudget(dish, profile.budget)) return false;
     if (dishContainsForbidden(dish, disliked, allergies)) return false;
@@ -179,8 +203,20 @@ export function pickDishFromCandidates(
   if (withoutSameDay.length === 0) return null;
 
   let available = withoutSameDay.filter(
-    (d) => !wouldExceedConsecutiveSame(d.id, dayIndex, dishIdsByDayForMeal),
+    (d) =>
+      !wouldExceedConsecutiveSame(d.id, dayIndex, dishIdsByDayForMeal) &&
+      !wouldExceedWeeklySame(d.id, dayIndex, dishIdsByDayForMeal),
   );
+  if (available.length === 0) {
+    available = withoutSameDay.filter(
+      (d) => !wouldExceedWeeklySame(d.id, dayIndex, dishIdsByDayForMeal),
+    );
+  }
+  if (available.length === 0) {
+    available = withoutSameDay.filter(
+      (d) => !wouldExceedConsecutiveSame(d.id, dayIndex, dishIdsByDayForMeal),
+    );
+  }
   if (available.length === 0) {
     available = withoutSameDay;
   }

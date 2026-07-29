@@ -47,7 +47,14 @@ export interface Dish {
   cookingMethods?: CookingMethod[];
   /** Примерная калорийность одной порции, ккал */
   caloriesPerServing?: number;
+  proteinPerServing?: number;
+  fatPerServing?: number;
+  carbsPerServing?: number;
+  /** Пользовательское блюдо */
+  isCustom?: boolean;
 }
+
+export type DishCatalogMode = "all" | "custom_only";
 
 export interface FamilyProfile {
   adultsCount: number;
@@ -66,6 +73,8 @@ export interface FamilyProfile {
   cookWithLeftovers: boolean;
   cuisinePreference: CuisinePreference;
   cookingMethods: CookingMethod[];
+  /** all — встроенные + свои; custom_only — только свои блюда */
+  dishCatalogMode: DishCatalogMode;
 }
 
 export interface PlannedMeal {
@@ -220,4 +229,5 @@ export const DEFAULT_FAMILY_PROFILE: FamilyProfile = {
   cookWithLeftovers: false,
   cuisinePreference: "any",
   cookingMethods: [...COOKING_METHOD_ORDER],
+  dishCatalogMode: "all",
 };

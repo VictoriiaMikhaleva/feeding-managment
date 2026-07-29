@@ -77,5 +77,7 @@ export function normalizeFamilyProfile(profile: FamilyProfile): FamilyProfile {
       orderCookingMethods(profile.cookingMethods ?? []).length > 0
         ? orderCookingMethods(profile.cookingMethods ?? [])
         : [...COOKING_METHOD_ORDER],
+    dishCatalogMode:
+      profile.dishCatalogMode === "custom_only" ? "custom_only" : "all",
   };
 }

@@ -17,6 +17,7 @@ import { loadProfile } from "@/lib/storage";
 import { validateProfile } from "@/lib/validate-profile";
 import { Button } from "./Button";
 import { Card } from "./Card";
+import { CustomDishesSection } from "./CustomDishesSection";
 
 interface MenuFormProps {
   initialProfile?: FamilyProfile;
@@ -255,8 +256,34 @@ export function MenuForm({ initialProfile, onSubmit, submitDisabled = false }: M
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block">
             <span className="mb-1 block text-sm text-amber-800">
-              На сколько дней
+              На сколько дней (до 2 недель)
             </span>
+            <div className="mb-2 flex gap-2">
+              <button
+                type="button"
+                onClick={() => update("days", 7)}
+                className={[
+                  "rounded-lg px-3 py-1.5 text-xs font-medium",
+                  profile.days === 7
+                    ? "bg-amber-600 text-white"
+                    : "bg-amber-50 text-amber-800",
+                ].join(" ")}
+              >
+                1 неделя
+              </button>
+              <button
+                type="button"
+                onClick={() => update("days", 14)}
+                className={[
+                  "rounded-lg px-3 py-1.5 text-xs font-medium",
+                  profile.days === 14
+                    ? "bg-amber-600 text-white"
+                    : "bg-amber-50 text-amber-800",
+                ].join(" ")}
+              >
+                2 недели
+              </button>
+            </div>
             <input
               type="number"
               min={1}
@@ -505,6 +532,11 @@ export function MenuForm({ initialProfile, onSubmit, submitDisabled = false }: M
           </label>
         </div>
       </Card>
+
+      <CustomDishesSection
+        catalogMode={profile.dishCatalogMode ?? "all"}
+        onCatalogModeChange={(mode) => update("dishCatalogMode", mode)}
+      />
 
       <Card padding="sm" className="bg-amber-50/50">
         <p className="text-sm text-amber-800">

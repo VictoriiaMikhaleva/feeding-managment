@@ -6,7 +6,7 @@ import type { GeneratedMealPlan, MealType } from "@/lib/types";
 import { generateMealPlan, getPlanStats } from "@/lib/generate-meal-plan";
 import { swapMealDish } from "@/lib/meal-plan-actions";
 import { formatShoppingListForCopy } from "@/lib/shopping-list";
-import { getPlanCaloriesAverage } from "@/lib/dish-calories";
+import { getPlanCaloriesAverage, getPlanNutritionAverage } from "@/lib/dish-calories";
 import {
   addToHistory,
   loadCheckedItems,
@@ -51,6 +51,7 @@ export function MealPlanResult({ plan: initialPlan }: MealPlanResultProps) {
 
   const stats = getPlanStats(plan);
   const avgDayCalories = getPlanCaloriesAverage(plan);
+  const avgNutrition = getPlanNutritionAverage(plan);
   const totalMealsInPlan = plan.days.reduce((acc, day) => acc + day.meals.length, 0);
   const selectedMealsCount = selectedMealsForPdf.size;
 
@@ -166,7 +167,10 @@ export function MealPlanResult({ plan: initialPlan }: MealPlanResultProps) {
           <span>{stats.totalMeals} приёмов пищи</span>
           <span>{stats.uniqueDishes} разных блюд</span>
           {avgDayCalories > 0 && (
-            <span>~{avgDayCalories} ккал/день</span>
+            <span>
+              ~{avgDayCalories} ккал/день · Б{avgNutrition.protein} Ж
+              {avgNutrition.fat} У{avgNutrition.carbs}
+            </span>
           )}
           <span>{stats.batchCount} с запасом</span>
           {stats.takeawayCount > 0 && (
